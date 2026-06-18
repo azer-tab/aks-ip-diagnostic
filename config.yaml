@@ -1,0 +1,4 @@
+ip_exhaustion_threshold: 10
+provisioning_state_timeout: 300
+subnet_capacity_threshold: 5
+max_pods_limit: 110

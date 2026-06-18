@@ -1,0 +1,12 @@
+azure-identity
+azure-mgmt-containerservice
+azure-mgmt-network
+pytest
+requests
+pyyaml
+jsonschema
+tabulate
+rich
+colorama
+kubernetes
+ipaddress
