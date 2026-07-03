@@ -32,7 +32,11 @@ def sample_report():
         "node_pools": [],
         "subnets": [],
         "recommendations": [],
-        "summary": {"overall_status": "HEALTHY", "risk_level": "LOW", "total_issues": 0},
+        "summary": {
+            "overall_status": "HEALTHY",
+            "risk_level": "LOW",
+            "total_issues": 0,
+        },
     }
 
 
@@ -47,7 +51,9 @@ def test_redaction_masks_sensitive_fields_and_ips():
     report["cluster_info"]["private_ip"] = "10.0.1.4"
     redacted = redact_report(report)
     assert redacted["cluster_info"]["name"].startswith("<redacted:name:")
-    assert redacted["cluster_info"]["resource_group"].startswith("<redacted:resource_group:")
+    assert redacted["cluster_info"]["resource_group"].startswith(
+        "<redacted:resource_group:"
+    )
     assert redacted["cluster_info"]["private_ip"] == "<redacted:ip-address>"
 
 
@@ -62,8 +68,19 @@ def test_convert_command_writes_markdown(tmp_path: Path):
     output_path = tmp_path / "report.md"
     report_path.write_text(json.dumps(sample_report()), encoding="utf-8")
     assert (
-        main(["convert", str(report_path), "--format", "markdown", "--output", str(output_path)])
+        main(
+            [
+                "convert",
+                str(report_path),
+                "--format",
+                "markdown",
+                "--output",
+                str(output_path),
+            ]
+        )
         == HEALTHY
     )
     assert output_path.exists()
-    assert "AKS IP Exhaustion Diagnostic Report" in output_path.read_text(encoding="utf-8")
+    assert "AKS IP Exhaustion Diagnostic Report" in output_path.read_text(
+        encoding="utf-8"
+    )
