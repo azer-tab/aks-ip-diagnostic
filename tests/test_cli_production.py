@@ -23,7 +23,12 @@ def sample_report():
             "resource_group": "rg-prod",
             "subscription_id": "00000000-0000-0000-0000-000000000000",
         },
-        "diagnostics": {},
+        "diagnostics": {
+            "provisioning_state": {"status": "PASS", "risk_level": "LOW", "issues": []},
+            "ip_exhaustion": {"status": "PASS", "risk_level": "LOW", "issues": []},
+            "subnet_capacity": {"status": "PASS", "risk_level": "LOW", "issues": []},
+            "max_pods": {"status": "PASS", "risk_level": "LOW", "issues": []},
+        },
         "node_pools": [],
         "subnets": [],
         "recommendations": [],
