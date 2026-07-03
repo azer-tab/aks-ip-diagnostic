@@ -1,0 +1,14 @@
+apiVersion: v2
+name: aks-ip-diagnostic
+description: Read-only AKS IP diagnostic CronJob
+type: application
+version: 0.1.0
+appVersion: "0.3.2"
+keywords:
+  - aks
+  - azure
+  - kubernetes
+  - diagnostics
+  - networking
+maintainers:
+  - name: Platform Engineering

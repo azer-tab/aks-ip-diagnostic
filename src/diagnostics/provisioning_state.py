@@ -1,7 +1,7 @@
 def check_provisioning_state(aks_client, resource_group, cluster_name):
     """
     Check the provisioning state of node pools in the specified AKS cluster.
-    
+
     Parameters:
     aks_client: An instance of the AKS client to interact with Azure.
     resource_group (str): The resource group containing the AKS cluster.
@@ -22,21 +22,21 @@ def check_provisioning_state(aks_client, resource_group, cluster_name):
 def flag_provisioning_failures(provisioning_states):
     """
     Flag any node pools that are in a failed provisioning state.
-    
+
     Parameters:
     provisioning_states (dict): A dictionary of node pool names and their provisioning states.
 
     Returns:
     list: A list of node pool names that have failed provisioning.
     """
-    failed_pools = [name for name, state in provisioning_states.items() if state != 'Succeeded']
+    failed_pools = [name for name, state in provisioning_states.items() if state != "Succeeded"]
     return failed_pools
 
 
 def diagnose_provisioning_state(aks_client, resource_group, cluster_name):
     """
     Diagnose the provisioning state of node pools and identify any failures.
-    
+
     Parameters:
     aks_client: An instance of the AKS client to interact with Azure.
     resource_group (str): The resource group containing the AKS cluster.
@@ -48,7 +48,4 @@ def diagnose_provisioning_state(aks_client, resource_group, cluster_name):
     provisioning_states = check_provisioning_state(aks_client, resource_group, cluster_name)
     failed_pools = flag_provisioning_failures(provisioning_states)
 
-    return {
-        'provisioning_states': provisioning_states,
-        'failed_pools': failed_pools
-    }
+    return {"provisioning_states": provisioning_states, "failed_pools": failed_pools}

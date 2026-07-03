@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "aks-ip-diagnostic.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "aks-ip-diagnostic.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  suspend: {{ .Values.suspend }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.backoffLimit }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "aks-ip-diagnostic.name" . }}
+            app.kubernetes.io/instance: {{ .Release.Name }}
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          serviceAccountName: {{ include "aks-ip-diagnostic.serviceAccountName" . }}
+          restartPolicy: {{ .Values.restartPolicy }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: aks-ip-diagnostic
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              {{- if .Values.envFromSecret }}
+              envFrom:
+                - secretRef:
+                    name: {{ .Values.envFromSecret }}
+              {{- end }}
+              args:
+                - scan
+                - --subscription-id
+                - {{ required "azure.subscriptionId is required" .Values.azure.subscriptionId | quote }}
+                - --resource-group
+                - {{ required "azure.resourceGroup is required" .Values.azure.resourceGroup | quote }}
+                - --cluster-name
+                - {{ required "azure.clusterName is required" .Values.azure.clusterName | quote }}
+                - --region
+                - {{ .Values.azure.region | quote }}
+                - --format
+                - {{ .Values.scan.outputFormat | quote }}
+                {{- if .Values.scan.includePodAnalysis }}
+                - --include-pod-analysis
+                {{- end }}
+                {{- if .Values.scan.includeCostAnalysis }}
+                - --include-cost-analysis
+                {{- end }}
+                {{- if .Values.scan.podLifecycle }}
+                - --pod-lifecycle
+                {{- end }}
+                {{- if .Values.scan.redact }}
+                - --redact
+                {{- end }}
+                {{- if .Values.scan.validateSchema }}
+                - --validate-schema
+                {{- end }}
+                {{- if .Values.scan.verbose }}
+                - --verbose
+                {{- end }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

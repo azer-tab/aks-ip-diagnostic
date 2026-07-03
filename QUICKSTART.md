@@ -31,7 +31,7 @@ az aks get-credentials --resource-group your-rg --name your-cluster
 ### Basic Node-Level Analysis
 
 ```bash
-python src/main.py \
+aks-ip-diagnostic scan \
   --subscription-id "your-sub-id" \
   --resource-group "your-rg" \
   --cluster-name "your-cluster" \
@@ -41,7 +41,7 @@ python src/main.py \
 ### Complete Analysis (Node + Pod Level)
 
 ```bash
-python src/main.py \
+aks-ip-diagnostic scan \
   --subscription-id "your-sub-id" \
   --resource-group "your-rg" \
   --cluster-name "your-cluster" \
@@ -80,7 +80,7 @@ python src/main.py \
 
 ```bash
 # Run diagnostic to check for IP exhaustion
-python src/main.py \
+aks-ip-diagnostic scan \
   --cluster-name failed-cluster \
   --resource-group prod-rg \
   --subscription-id your-sub-id \
@@ -113,7 +113,7 @@ python src/main.py \
 
 ```bash
 # Check for IP waste and over-provisioning
-python src/main.py \
+aks-ip-diagnostic scan \
   --cluster-name my-cluster \
   --include-pod-analysis \
   --format json-pretty \
@@ -140,7 +140,7 @@ az aks nodepool add \
 
 ```bash
 # Get detailed capacity metrics
-python src/main.py \
+aks-ip-diagnostic scan \
   --cluster-name my-cluster \
   --include-pod-analysis \
   --pod-lifecycle \
@@ -162,21 +162,20 @@ jq '.diagnostics.pod_ip_analysis.details' capacity-report.json
 
 ```bash
 # Standard diagnostic
-python src/main.py --cluster-name <name> --format text
+aks-ip-diagnostic scan --cluster-name <name> --format text
 
 # Full analysis with JSON output
-python src/main.py \
+aks-ip-diagnostic scan \
   --cluster-name <name> \
   --include-pod-analysis \
   --format json-pretty \
   --output report.json
 
 # Validate existing report
-python src/main.py --validate report.json
+aks-ip-diagnostic validate report.json
 
 # Convert JSON to Markdown
-python src/main.py \
-  --input report.json \
+aks-ip-diagnostic convert report.json \
   --format markdown \
   --output report.md
 ```
@@ -221,7 +220,7 @@ Set up scheduled diagnostics:
 
 ```bash
 # Add to crontab for daily checks
-0 9 * * * cd /path/to/aks-ip-diagnostic && python src/main.py \
+0 9 * * * cd /path/to/aks-ip-diagnostic && aks-ip-diagnostic scan \
   --cluster-name prod-cluster \
   --include-pod-analysis \
   --format json \

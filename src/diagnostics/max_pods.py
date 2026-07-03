@@ -13,11 +13,13 @@ def evaluate_max_pods(node_pools, max_pods_limit):
     issues = []
 
     for pool in node_pools:
-        pool_name = pool.get('name')
-        max_pods = pool.get('maxPods')
+        pool_name = pool.get("name")
+        max_pods = pool.get("maxPods")
 
         if max_pods > max_pods_limit:
-            issues.append(f"Node pool '{pool_name}' exceeds maxPods limit: {max_pods} > {max_pods_limit}")
+            issues.append(
+                f"Node pool '{pool_name}' exceeds maxPods limit: {max_pods} > {max_pods_limit}"
+            )
 
     return issues
 

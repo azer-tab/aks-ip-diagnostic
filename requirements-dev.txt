@@ -1,0 +1,7 @@
+-r requirements.txt
+pytest>=8,<10
+ruff>=0.6,<1
+bandit>=1.7,<2
+pip-audit>=2,<3
+build>=1,<2
+twine>=6,<7

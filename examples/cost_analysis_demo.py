@@ -233,6 +233,6 @@ For questions or issues:
 
 if __name__ == "__main__":
     print(__doc__)
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("To run cost analysis, use the main.py script with --include-cost-analysis")
-    print("="*80)
+    print("=" * 80)

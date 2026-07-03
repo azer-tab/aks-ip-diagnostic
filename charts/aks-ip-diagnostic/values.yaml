@@ -1,0 +1,66 @@
+# Default values for the optional AKS IP Diagnostic Helm chart.
+# The chart runs the diagnostic as a Kubernetes CronJob.
+
+image:
+  repository: "your-dockerhub-user/aks-ip-diagnostic"
+  tag: "0.3.2"
+  pullPolicy: IfNotPresent
+
+schedule: "0 2 * * *"
+suspend: false
+successfulJobsHistoryLimit: 3
+failedJobsHistoryLimit: 3
+backoffLimit: 1
+restartPolicy: Never
+
+azure:
+  subscriptionId: ""
+  resourceGroup: ""
+  clusterName: ""
+  region: "eastus"
+
+scan:
+  outputFormat: "text"
+  includePodAnalysis: true
+  includeCostAnalysis: false
+  podLifecycle: false
+  redact: true
+  validateSchema: false
+  verbose: false
+
+# Optional existing secret that exposes Azure Identity environment variables.
+# Example keys: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET.
+envFromSecret: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+rbac:
+  create: true
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+
+podSecurityContext:
+  fsGroup: 1000
