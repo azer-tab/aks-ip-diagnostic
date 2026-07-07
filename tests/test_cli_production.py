@@ -51,9 +51,7 @@ def test_redaction_masks_sensitive_fields_and_ips():
     report["cluster_info"]["private_ip"] = "10.0.1.4"
     redacted = redact_report(report)
     assert redacted["cluster_info"]["name"].startswith("<redacted:name:")
-    assert redacted["cluster_info"]["resource_group"].startswith(
-        "<redacted:resource_group:"
-    )
+    assert redacted["cluster_info"]["resource_group"].startswith("<redacted:resource_group:")
     assert redacted["cluster_info"]["private_ip"] == "<redacted:ip-address>"
 
 
@@ -81,6 +79,4 @@ def test_convert_command_writes_markdown(tmp_path: Path):
         == HEALTHY
     )
     assert output_path.exists()
-    assert "AKS IP Exhaustion Diagnostic Report" in output_path.read_text(
-        encoding="utf-8"
-    )
+    assert "AKS IP Exhaustion Diagnostic Report" in output_path.read_text(encoding="utf-8")
