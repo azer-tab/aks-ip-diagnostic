@@ -1,9 +1,9 @@
 from types import SimpleNamespace
 
-from aks_ip_diagnostic.models import ScanConfig
-from aks_ip_diagnostic.orchestrator import AKSDiagnosticOrchestrator
-from reports.formatters import OutputFormat, format_report
-from utils.logger import setup_logger
+from src.aks_ip_diagnostic.models import ScanConfig
+from src.aks_ip_diagnostic.orchestrator import AKSDiagnosticOrchestrator
+from src.reports.formatters import OutputFormat, format_report
+from src.utils.logger import setup_logger
 
 
 class FakeAzureCollector:
@@ -53,8 +53,16 @@ def test_orchestrator_builds_report_without_cli_or_live_azure():
 def test_clean_text_output_contains_operator_tables():
     report = {
         "metadata": {"timestamp": "2026-01-01T00:00:00Z", "scan_duration_seconds": 1},
-        "cluster_info": {"name": "aks", "resource_group": "rg", "subscription_id": "sub"},
-        "summary": {"overall_status": "HEALTHY", "risk_level": "LOW", "total_issues": 0},
+        "cluster_info": {
+            "name": "aks",
+            "resource_group": "rg",
+            "subscription_id": "sub",
+        },
+        "summary": {
+            "overall_status": "HEALTHY",
+            "risk_level": "LOW",
+            "total_issues": 0,
+        },
         "diagnostics": {"ip_exhaustion": {"status": "PASS", "risk_level": "LOW", "issues": []}},
         "subnets": [
             {
@@ -67,7 +75,12 @@ def test_clean_text_output_contains_operator_tables():
             }
         ],
         "node_pools": [
-            {"name": "system", "provisioning_state": "Succeeded", "count": 3, "max_pods": 30}
+            {
+                "name": "system",
+                "provisioning_state": "Succeeded",
+                "count": 3,
+                "max_pods": 30,
+            }
         ],
         "issues": [],
         "recommendations": [],

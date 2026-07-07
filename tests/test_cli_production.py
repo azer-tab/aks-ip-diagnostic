@@ -1,14 +1,14 @@
 import json
 from pathlib import Path
 
-from aks_ip_diagnostic.cli import main
-from aks_ip_diagnostic.exit_codes import (
+from src.aks_ip_diagnostic.cli import main
+from src.aks_ip_diagnostic.exit_codes import (
     CRITICAL_ISSUES_FOUND,
     HEALTHY,
     WARNINGS_FOUND,
     code_for_status,
 )
-from aks_ip_diagnostic.redaction import redact_report
+from src.aks_ip_diagnostic.redaction import redact_report
 
 
 def sample_report():
