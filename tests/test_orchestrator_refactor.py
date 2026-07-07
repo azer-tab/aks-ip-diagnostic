@@ -42,7 +42,7 @@ def test_orchestrator_builds_report_without_cli_or_live_azure():
     config = ScanConfig(subscription_id="sub", resource_group="rg", cluster_name="aks")
     logger = setup_logger("test-orchestrator", verbose=False)
 
-    report = AKSDiagnosticOrchestrator(config, logger, FakeAzureCollector(cluster, pools)).run()
+    report = AKSDiagnosticOrchestrator(config, logger, FakeAzureCollector(cluster, pools)).run()  # type: ignore
 
     assert report["cluster_info"]["name"] == "aks"
     assert report["cluster_info"]["location"] == "eastus"

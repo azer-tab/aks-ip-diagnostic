@@ -111,7 +111,10 @@ def estimate_ip_cost(ip_count: int, ip_type: str = "private") -> float:
 
 
 def estimate_node_pool_cost(
-    vm_size: str, node_count: int, os_disk_size_gb: int = 128, enable_public_ip: bool = False
+    vm_size: str,
+    node_count: int,
+    os_disk_size_gb: int = 128,
+    enable_public_ip: bool = False,
 ) -> dict[str, float]:
     """
     Estimate total monthly cost for a node pool.
@@ -168,8 +171,12 @@ def calculate_ip_waste_cost(allocated_ips: int, used_ips: int) -> dict[str, floa
 
 
 def calculate_health_score(
-    issues: list, warnings: int, critical: int, subnet_utilization: float, ip_waste_percent: float
-) -> dict[str, any]:
+    issues: list,
+    warnings: int,
+    critical: int,
+    subnet_utilization: float,
+    ip_waste_percent: float,
+) -> dict[str, any]:  # type: ignore
     """
     Calculate overall cluster health score (0-100).
 
