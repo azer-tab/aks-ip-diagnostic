@@ -85,11 +85,11 @@ Contains read-only Azure collection and subnet parsing. Azure SDK calls should s
 Owns output formatting. The cleaner text output is organized for operators:
 
 - executive summary
-- top findings
-- diagnostic checks
-- subnet/CIDR capacity
+- executive summary
+- diagnostic results
+- subnet / CIDR capacity
 - node pools
-- recommended next actions
+- recommendations
 
 ## Rules for future changes
 

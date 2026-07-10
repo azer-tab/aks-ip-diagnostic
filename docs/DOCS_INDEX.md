@@ -1,40 +1,43 @@
 # Documentation index
 
-The `docs/` folder is useful and should stay in the repository. The README is the quick entry point; these files cover operational details that would make the README too long.
+The README is the main entry point. The files in `docs/` hold operational details that would make the README too long.
 
-## Recommended docs to keep
+## Documentation map
 
-| File | Purpose | Keep? |
+| File | Purpose | Keep updated when |
 |---|---|---|
-| `PRODUCTION_READINESS.md` | Release gates, security posture, permissions, and operational checks. | Yes |
-| `REFACTORING_NOTES.md` | Explains the new architecture after the main-file refactor. | Yes |
-| `JSON_OUTPUT_GUIDE.md` | Documents stable report formats, validation, conversion, and automation usage. | Yes |
-| `POD_LEVEL_ANALYSIS.md` | Explains the optional Kubernetes API based pod analysis. | Yes |
-| `COST_ANALYSIS_GUIDE.md` | Explains cost and waste estimates with caveats. | Yes |
-| `RELEASE_GUIDE.md` | Docker Hub, Python package, GitHub release, and versioning process. | Yes |
-| `HELM_CHART_GUIDE.md` | Optional Helm/CronJob deployment guidance. | Yes, if you want scheduled in-cluster scans |
+| `PRODUCTION_READINESS.md` | Release gates, read-only safety model, permissions, and operational checks. | CI, security posture, permissions, or release process changes. |
+| `REFACTORING_NOTES.md` | Explains the CLI, scan runner, orchestrator, collector, and formatter responsibilities. | Module boundaries or execution flow change. |
+| `JSON_OUTPUT_GUIDE.md` | Documents report formats, validation, conversion, redaction, and automation usage. | Report shape, output formats, or schema behavior changes. |
+| `POD_LEVEL_ANALYSIS.md` | Explains optional Kubernetes API based pod analysis and RBAC. | Pod analysis behavior or Kubernetes permissions change. |
+| `COST_ANALYSIS_GUIDE.md` | Explains estimated cost/capacity-waste analysis and caveats. | Cost model assumptions or output fields change. |
+| `RELEASE_GUIDE.md` | Docker Hub, Python package, GitHub release, and versioning process. | Versioning, publishing, or release automation changes. |
+| `HELM_CHART_GUIDE.md` | Optional Helm/CronJob deployment guidance. | Chart values, image tags, auth model, or chart templates change. |
+| `CODE_QUALITY_NOTES.md` | Local quality gates and notes from recent test/refactor cleanup. | CI failures, test strategy, or local quality commands change. |
 
-## When to add new docs
+## Documentation rules
 
-Add a new document only when the content is too detailed for `README.md` or when it is a reusable operational runbook. Otherwise, prefer updating the README.
+- Keep quick-start commands in `README.md` and `QUICKSTART.md` consistent.
+- Keep version references aligned across `pyproject.toml`, `src/aks_ip_diagnostic/__init__.py`, `charts/aks-ip-diagnostic/Chart.yaml`, and chart values.
+- Do not document a release as ready until tests and CI release gates pass.
+- Do not commit generated reports unless they are intentionally sanitized examples.
+- Prefer updating an existing document over adding a new one unless the content is a reusable runbook.
 
-## Documentation update checklist
-
-Before a release, check that:
+## Pre-release documentation checklist
 
 ```bash
-python -m compileall -q src tests
+python -m compileall -q src tests examples
 pytest -q
 aks-ip-diagnostic --help
+aks-ip-diagnostic scan --help
 aks-ip-diagnostic version
 ```
 
 Then review:
 
 - command examples still match the CLI
-- version numbers match `pyproject.toml`, `src/aks_ip_diagnostic/__init__.py`, and the Helm chart if changed
-- Docker image names in examples use your real Docker Hub namespace
-- security and permission examples are still least-privilege
-- generated reports are not committed unless they are sanitized examples
-
-- `CODE_QUALITY_NOTES.md` - local quality gates and notes from the pod-analysis refactor.
+- output sections and JSON fields match current formatter behavior
+- CI commands match `.github/workflows/ci.yml`
+- release version examples match the package and chart
+- permission examples remain read-only and least-privilege
+- redaction guidance is present anywhere report sharing is discussed
