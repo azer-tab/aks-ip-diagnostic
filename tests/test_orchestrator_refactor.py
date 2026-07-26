@@ -26,7 +26,9 @@ def test_orchestrator_builds_report_without_cli_or_live_azure():
     cluster = SimpleNamespace(
         location="eastus",
         kubernetes_version="1.29.0",
-        network_profile=SimpleNamespace(pod_cidr="10.244.0.0/16", service_cidr="10.0.0.0/16"),
+        network_profile=SimpleNamespace(
+            pod_cidr="10.244.0.0/16", service_cidr="10.0.0.0/16"
+        ),
         tags={"env": "test"},
     )
     pools = [
@@ -63,7 +65,9 @@ def test_clean_text_output_contains_operator_tables():
             "risk_level": "LOW",
             "total_issues": 0,
         },
-        "diagnostics": {"ip_exhaustion": {"status": "PASS", "risk_level": "LOW", "issues": []}},
+        "diagnostics": {
+            "ip_exhaustion": {"status": "PASS", "risk_level": "LOW", "issues": []}
+        },
         "subnets": [
             {
                 "name": "pod-cidr",
