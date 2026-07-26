@@ -23,7 +23,7 @@ jobs:
           pytest -q
           ruff check .
           ruff format --check .
-          # bandit -r src -x tests
+          bandit -r src -x tests
           pip-audit
       - name: Build Python package
         run: |
