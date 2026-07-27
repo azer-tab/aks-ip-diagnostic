@@ -1,10 +1,5 @@
 from types import SimpleNamespace
 
-from src.aks_ip_diagnostic.models import ScanConfig
-from src.aks_ip_diagnostic.orchestrator import AKSDiagnosticOrchestrator
-from src.reports.formatters import OutputFormat, format_report
-from src.utils.logger import setup_logger
-
 
 class FakeAzureCollector:
     """Small fake collector proving the orchestrator is testable without Azure."""
