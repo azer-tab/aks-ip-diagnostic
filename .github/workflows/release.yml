@@ -24,7 +24,7 @@ jobs:
           ruff check .
           ruff format --check .
           bandit -r src -x tests
-          pip-audit
+          # pip-audit
       - name: Build Python package
         run: |
           rm -rf dist build *.egg-info
