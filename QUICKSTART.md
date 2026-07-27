@@ -1,51 +1,39 @@
 # Quick start
 
-This guide gets you from a clean checkout to a first AKS IP diagnostic report.
-
-## 1. Install locally
+## Install
 
 ```bash
-git clone <repository-url>
-cd aks-ip-diagnostic
-
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
+pip install .
+```
+
+For contributors:
+
+```bash
 pip install -e ".[dev]"
 ```
 
-For runtime-only use, `pip install .` is enough.
-
-## 2. Authenticate
+## Authenticate
 
 ```bash
 az login
 az account set --subscription "<subscription-id>"
-az account show
 ```
 
-Pod-level analysis also requires kubeconfig access:
+The identity needs read access to the AKS cluster, its node pools, and referenced networking resources.
 
-```bash
-az aks get-credentials \
-  --resource-group "<resource-group>" \
-  --name "<cluster-name>"
-
-kubectl auth can-i list nodes
-kubectl auth can-i list pods --all-namespaces
-```
-
-## 3. Run a basic scan
+## Run the first scan
 
 ```bash
 aks-ip-diagnostic scan \
   --subscription-id "<subscription-id>" \
   --resource-group "<resource-group>" \
-  --cluster-name "<cluster-name>" \
-  --format text
+  --cluster-name "<cluster-name>"
 ```
 
-## 4. Save a JSON report
+## Save and validate JSON
 
 ```bash
 aks-ip-diagnostic scan \
@@ -53,10 +41,11 @@ aks-ip-diagnostic scan \
   --resource-group "<resource-group>" \
   --cluster-name "<cluster-name>" \
   --format json-pretty \
+  --validate-schema \
   --output reports/aks-ip-report.json
 ```
 
-Validate the saved report:
+Validate an existing report:
 
 ```bash
 aks-ip-diagnostic validate reports/aks-ip-report.json
@@ -70,62 +59,27 @@ aks-ip-diagnostic convert reports/aks-ip-report.json \
   --output reports/aks-ip-report.md
 ```
 
-## 5. Run optional pod-level analysis
+## Share a redacted report
 
 ```bash
-aks-ip-diagnostic scan \
-  --subscription-id "<subscription-id>" \
-  --resource-group "<resource-group>" \
-  --cluster-name "<cluster-name>" \
-  --include-pod-analysis \
-  --format text
-```
-
-Pod-level analysis uses the Kubernetes API. The base Azure scan can still run without it.
-
-## 6. Generate a shareable redacted report
-
-```bash
-aks-ip-diagnostic scan \
-  --subscription-id "<subscription-id>" \
-  --resource-group "<resource-group>" \
-  --cluster-name "<cluster-name>" \
-  --include-pod-analysis \
-  --redact \
+aks-ip-diagnostic convert reports/aks-ip-report.json \
   --format markdown \
-  --output reports/redacted-aks-ip-report.md
+  --redact \
+  --output reports/redacted-report.md
 ```
 
-Review redacted reports before sharing externally.
+Review the result manually before sharing it outside the platform team.
 
-## Useful commands
+## Interpret the result
 
-```bash
-aks-ip-diagnostic --help
-aks-ip-diagnostic scan --help
-aks-ip-diagnostic version
-python -m compileall -q src tests examples
-pytest -q
-```
-
-## Interpreting results
-
-| Field | Meaning |
+| Value | Meaning |
 |---|---|
-| `summary.overall_status` | `HEALTHY`, `WARNING`, or `CRITICAL` scan result. |
-| `summary.risk_level` | Operator-facing severity level. |
-| `summary.total_issues` | Number of detected findings. |
-| `diagnostics` | Per-check status, risk, details, and issues. |
-| `node_pools` | Normalized node-pool configuration and capacity data. |
-| `subnets` | Subnet or pod CIDR capacity data where available. |
-| `recommendations` | Suggested operator follow-up actions. |
+| `HEALTHY` | No warning or critical issues were detected |
+| `WARNING` | Capacity or configuration risk needs planned action |
+| `CRITICAL` | A finding may block scaling, upgrades, or provisioning |
 
-Exit codes are documented in the README and `docs/PRODUCTION_READINESS.md`.
+Exit codes are `0`, `1`, and `2` for those states. Codes `3` to `5` indicate execution, usage, or report-processing failures.
 
-## Next documentation to read
+## Current feature boundary
 
-- `README.md` for full project usage and architecture summary.
-- `docs/PRODUCTION_READINESS.md` before publishing or running in production.
-- `docs/JSON_OUTPUT_GUIDE.md` for report automation.
-- `docs/POD_LEVEL_ANALYSIS.md` for Kubernetes RBAC and pod diagnostics.
-- `docs/COST_ANALYSIS_GUIDE.md` before using estimated cost output.
+The base Azure scan is implemented. `--include-pod-analysis` and `--include-cost-analysis` currently add `SKIPPED` diagnostics rather than running those analyses. See the README and `docs/PRODUCTION_REVIEW.md` before deploying the optional Helm chart or publishing a release.

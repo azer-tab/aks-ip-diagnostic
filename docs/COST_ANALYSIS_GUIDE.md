@@ -1,5 +1,7 @@
 # Cost analysis guide
 
+> **Implementation status:** detailed cost analysis is not wired into the active orchestrator. `--include-cost-analysis` currently records a `SKIPPED` diagnostic. The base report still contains heuristic estimates from a static price table; those values are non-authoritative.
+
 Cost analysis is optional and should be treated as an estimate. It is designed to help platform teams prioritize IP capacity and node-pool configuration work; it is not a replacement for Azure billing data.
 
 ## Important billing caveat

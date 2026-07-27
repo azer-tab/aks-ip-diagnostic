@@ -3,7 +3,7 @@ name: aks-ip-diagnostic
 description: Read-only AKS IP diagnostic CronJob
 type: application
 version: 0.1.0
-appVersion: "0.3.2"
+appVersion: "0.3.3"
 keywords:
   - aks
   - azure

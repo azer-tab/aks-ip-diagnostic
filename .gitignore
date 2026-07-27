@@ -139,7 +139,7 @@ dmypy.json
 *.bak
 test-reports/
 output/
-reports/
+/reports/
 *.json.backup
 recette-test*.json
 cost-report*.json

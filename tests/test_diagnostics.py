@@ -1,9 +1,9 @@
 from types import SimpleNamespace
 
-from src.diagnostics.ip_exhaustion import analyze_provisioning_failure, calculate_ip_deficit
-from src.diagnostics.max_pods import evaluate_max_pods
-from src.diagnostics.provisioning_state import flag_provisioning_failures
-from src.diagnostics.subnet_capacity import (
+from diagnostics.ip_exhaustion import analyze_provisioning_failure, calculate_ip_deficit
+from diagnostics.max_pods import evaluate_max_pods
+from diagnostics.provisioning_state import flag_provisioning_failures
+from diagnostics.subnet_capacity import (
     analyze_subnet_utilization,
     calculate_required_ips,
     calculate_subnet_ips,

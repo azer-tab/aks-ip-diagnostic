@@ -1,10 +1,18 @@
 """Enhanced report formatters with multiple output format support."""
 
 import json
-import yaml
-from datetime import datetime
-from typing import Dict, List, Any, Optional
+from datetime import datetime, timezone
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import yaml
+
+from aks_ip_diagnostic import __version__
+
+
+# datetime.UTC was added in Python 3.11. timezone.utc keeps the package
+# compatible with the declared Python 3.10+ support range.
+UTC = timezone.utc
 
 
 class OutputFormat(Enum):
@@ -52,12 +60,12 @@ class DiagnosticReportBuilder:
         self.cluster_name = cluster_name
         self.resource_group = resource_group
         self.subscription_id = subscription_id
-        self.scan_start_time = datetime.utcnow()
+        self.scan_start_time = datetime.now(UTC)
         self.data = {
             "metadata": {
                 "version": "1.0",
-                "timestamp": self.scan_start_time.isoformat() + "Z",
-                "tool_version": "1.0.0",
+                "timestamp": self.scan_start_time.isoformat().replace("+00:00", "Z"),
+                "tool_version": __version__,
                 "scan_duration_seconds": 0,
             },
             "cluster_info": {
@@ -68,6 +76,7 @@ class DiagnosticReportBuilder:
             "diagnostics": {},
             "node_pools": [],
             "subnets": [],
+            "issues": [],
             "recommendations": [],
             "summary": {
                 "overall_status": "UNKNOWN",
@@ -107,7 +116,7 @@ class DiagnosticReportBuilder:
             "risk_level": risk_level,
             "issues": issues,
             "details": details or {},
-            "checked_at": datetime.utcnow().isoformat() + "Z",
+            "checked_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         }
         return self
 
@@ -144,35 +153,20 @@ class DiagnosticReportBuilder:
         capacity_outlook: Dict = None,  # type: ignore
     ):
         """Set comprehensive summary information with health scoring and efficiency metrics."""
-        # Calculate issue counts from diagnostics
-        total_issues = 0
-        critical_issues = 0
-        warnings = 0
-        healthy_checks = 0
-
-        # Count issues from diagnostics section
-        for diagnostic in self.data["diagnostics"].values():
-            if diagnostic["status"] == "FAIL":
-                issues = diagnostic.get("issues", [])
-                total_issues += len(issues)
-                for issue in issues:
-                    severity = issue.get("severity", "WARNING")
-                    if severity == "CRITICAL" or severity == "ERROR":
-                        critical_issues += 1
-                    elif severity == "WARNING":
-                        warnings += 1
-            elif diagnostic["status"] == "PASS":
-                healthy_checks += 1
-
-        # Also count issues from the general issues array
-        if "issues" in self.data and self.data["issues"]:
-            for issue in self.data["issues"]:
-                total_issues += 1
-                severity = issue.get("severity", "WARNING")
-                if severity == "CRITICAL" or severity == "ERROR":
-                    critical_issues += 1
-                elif severity == "WARNING":
-                    warnings += 1
+        # The top-level issues array is the canonical issue collection.
+        # Diagnostic sections may repeat those issues for local context, so counting
+        # both locations would inflate summary totals.
+        issues = self.data.get("issues", [])
+        total_issues = len(issues)
+        critical_issues = sum(
+            1 for issue in issues if issue.get("severity") in {"CRITICAL", "ERROR"}
+        )
+        warnings = sum(1 for issue in issues if issue.get("severity") == "WARNING")
+        healthy_checks = sum(
+            1
+            for diagnostic in self.data["diagnostics"].values()
+            if diagnostic.get("status") == "PASS"
+        )
 
         # Build summary with all metrics
         self.data["summary"] = {
@@ -202,7 +196,7 @@ class DiagnosticReportBuilder:
             self.data["summary"]["capacity_outlook"] = capacity_outlook
 
         # Update scan duration
-        scan_end_time = datetime.utcnow()
+        scan_end_time = datetime.now(UTC)
         duration = (scan_end_time - self.scan_start_time).total_seconds()
         self.data["metadata"]["scan_duration_seconds"] = round(duration, 2)
 
@@ -374,14 +368,9 @@ def format_text_report(report_data: Dict) -> str:
     """Format report as human-readable text."""
     lines = [
         "AKS IP Diagnostic Report",
+        "=" * 80,
         "",
-        "Executive summary",
     ]
-    # lines = []
-    lines.append("=" * 80)
-    lines.append("AKS IP EXHAUSTION DIAGNOSTIC REPORT")
-    lines.append("=" * 80)
-    lines.append("")
 
     # Cluster info
     cluster = report_data.get("cluster_info", {})
@@ -390,8 +379,9 @@ def format_text_report(report_data: Dict) -> str:
     lines.append(f"Subscription: {cluster.get('subscription_id')}")
     if cluster.get("location"):
         lines.append(f"Location: {cluster.get('location')}")
-    if cluster.get("kubernetes_version"):
-        lines.append(f"Kubernetes Version: {cluster.get('kubernetes_version')}")
+    kubernetes_version = cluster.get("k8s_version") or cluster.get("kubernetes_version")
+    if kubernetes_version:
+        lines.append(f"Kubernetes Version: {kubernetes_version}")
     lines.append("")
 
     # Metadata
@@ -410,11 +400,13 @@ def format_text_report(report_data: Dict) -> str:
     )
 
     lines.append("-" * 80)
-    lines.append("SUMMARY")
+    lines.append("EXECUTIVE SUMMARY")
     lines.append("-" * 80)
     lines.append(f"{status_icon} Overall Status: {overall_status}")
     lines.append(f"   Risk Level: {summary.get('risk_level')}")
     lines.append(f"   Total Issues: {summary.get('total_issues')}")
+    if summary.get("total_issues", 0) == 0:
+        lines.append("   No issues detected")
     if summary.get("critical_issues", 0) > 0:
         lines.append(f"     ❌ Critical: {summary.get('critical_issues')}")
     if summary.get("warnings", 0) > 0:
@@ -509,7 +501,7 @@ def format_text_report(report_data: Dict) -> str:
     subnets = report_data.get("subnets", [])
     if subnets:
         lines.append("-" * 80)
-        lines.append("SUBNET INFORMATION")
+        lines.append("SUBNET / CIDR CAPACITY")
         lines.append("-" * 80)
         for subnet in subnets:
             lines.append(f"\n{subnet.get('name')}:")

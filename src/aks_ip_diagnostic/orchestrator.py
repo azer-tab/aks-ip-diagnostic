@@ -375,13 +375,25 @@ class AKSDiagnosticOrchestrator:
             for issue in raw_issues
         ]
 
-        failed_pools = [
+        for issue in normalized:
+            builder.add_issue(issue)
+
+        non_succeeded_pools = [
             pool for pool in node_pools if getattr(pool, "provisioning_state", None) != "Succeeded"
         ]
+        failed_pools = [
+            pool for pool in node_pools if getattr(pool, "provisioning_state", None) == "Failed"
+        ]
+        diagnostic_status = (
+            "FAIL" if failed_pools else ("WARNING" if non_succeeded_pools else "PASS")
+        )
+        diagnostic_risk = (
+            "CRITICAL" if failed_pools else ("MEDIUM" if non_succeeded_pools else "LOW")
+        )
         builder.add_diagnostic_result(
             diagnostic_type="provisioning_state",
-            status="PASS" if not failed_pools else "FAIL",
-            risk_level="CRITICAL" if failed_pools else "LOW",
+            status=diagnostic_status,
+            risk_level=diagnostic_risk,
             issues=raw_issues,
             details={
                 "total_pools": len(node_pools),
@@ -392,6 +404,10 @@ class AKSDiagnosticOrchestrator:
                         if getattr(pool, "provisioning_state", None) == "Succeeded"
                     ]
                 ),
+                "non_succeeded_pools": len(non_succeeded_pools),
+                "non_succeeded_pool_names": [
+                    getattr(pool, "name", None) for pool in non_succeeded_pools
+                ],
                 "failed_pools": len(failed_pools),
                 "failed_pool_names": [getattr(pool, "name", None) for pool in failed_pools],
             },
@@ -473,8 +489,11 @@ class AKSDiagnosticOrchestrator:
                 )
             )
 
+        for issue in issues:
+            builder.add_issue(issue)
+
         high_maxpods_pools = [
-            pool for pool in node_pools if (getattr(pool, "max_pods", None) or 30) > 50
+            pool for pool in node_pools if (getattr(pool, "max_pods", None) or 30) > 100
         ]
         builder.add_diagnostic_result(
             diagnostic_type="max_pods_configuration",
@@ -579,7 +598,9 @@ class AKSDiagnosticOrchestrator:
                 "headroom_percent": round(100 - max_subnet_utilization, 2)
                 if max_subnet_utilization > 0
                 else 100,
-                "available_ips": total_allocated_ips - total_used_ips,
+                "available_ips": sum(
+                    subnet.get("available_ips", 0) for subnet in subnets
+                ),
             },
         )
 

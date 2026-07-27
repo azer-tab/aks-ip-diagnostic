@@ -1,5 +1,7 @@
 # Pod-level IP usage analysis
 
+> **Implementation status:** the repository contains pod-analysis code, but the current orchestrator does not execute it. `--include-pod-analysis` currently records a `SKIPPED` diagnostic. This document describes the intended capability and requirements for completing the integration.
+
 Pod-level analysis is optional. It requires Kubernetes API access and gives a more accurate view of how IP capacity is actually being consumed inside the cluster.
 
 ## What it adds

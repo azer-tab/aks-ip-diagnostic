@@ -4,7 +4,15 @@ DIAGNOSTIC_REPORT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "AKS IP Diagnostic Report",
     "type": "object",
-    "required": ["metadata", "cluster_info", "diagnostics", "summary"],
+    "required": [
+        "metadata",
+        "cluster_info",
+        "diagnostics",
+        "node_pools",
+        "subnets",
+        "recommendations",
+        "summary",
+    ],
     "properties": {
         "metadata": {
             "type": "object",
@@ -13,8 +21,8 @@ DIAGNOSTIC_REPORT_SCHEMA = {
                 "version": {"type": "string"},
                 "timestamp": {"type": "string", "format": "date-time"},
                 "tool_version": {"type": "string"},
-                "scan_duration_seconds": {"type": "number"}
-            }
+                "scan_duration_seconds": {"type": "number", "minimum": 0},
+            },
         },
         "cluster_info": {
             "type": "object",
@@ -23,170 +31,194 @@ DIAGNOSTIC_REPORT_SCHEMA = {
                 "name": {"type": "string"},
                 "resource_group": {"type": "string"},
                 "subscription_id": {"type": "string"},
-                "location": {"type": "string"},
-                "kubernetes_version": {"type": "string"},
-                "network_plugin": {"type": "string", "enum": ["azure", "kubenet"]},
-                "dns_service_ip": {"type": "string"},
-                "service_cidr": {"type": "string"},
-                "pod_cidr": {"type": ["string", "null"]}
-            }
+                "location": {"type": ["string", "null"]},
+                "k8s_version": {"type": ["string", "null"]},
+                "network_plugin": {"type": ["string", "null"]},
+                "network_mode": {"type": ["string", "null"]},
+                "network_policy": {"type": ["string", "null"]},
+                "dns_service_ip": {"type": ["string", "null"]},
+                "service_cidr": {"type": ["string", "null"]},
+                "pod_cidr": {"type": ["string", "null"]},
+            },
+            "additionalProperties": True,
         },
         "diagnostics": {
             "type": "object",
-            "required": ["provisioning_state", "ip_exhaustion", "subnet_capacity", "max_pods"],
-            "properties": {
-                "provisioning_state": {"$ref": "#/definitions/diagnostic_result"},
-                "ip_exhaustion": {"$ref": "#/definitions/diagnostic_result"},
-                "subnet_capacity": {"$ref": "#/definitions/diagnostic_result"},
-                "max_pods": {"$ref": "#/definitions/diagnostic_result"}
-            }
+            "required": ["provisioning_state", "ip_exhaustion", "subnet_capacity"],
+            "anyOf": [
+                {"required": ["max_pods_configuration"]},
+                {"required": ["max_pods"]},
+            ],
+            "additionalProperties": {"$ref": "#/definitions/diagnostic_result"},
         },
         "node_pools": {
             "type": "array",
-            "items": {"$ref": "#/definitions/node_pool"}
+            "items": {"$ref": "#/definitions/node_pool"},
         },
         "subnets": {
             "type": "array",
-            "items": {"$ref": "#/definitions/subnet"}
+            "items": {"$ref": "#/definitions/subnet"},
         },
         "recommendations": {
             "type": "array",
-            "items": {"$ref": "#/definitions/recommendation"}
+            "items": {"$ref": "#/definitions/recommendation"},
+        },
+        "issues": {
+            "type": "array",
+            "items": {"$ref": "#/definitions/issue"},
         },
         "summary": {
             "type": "object",
             "required": ["overall_status", "risk_level", "total_issues"],
             "properties": {
-                "overall_status": {"type": "string", "enum": ["HEALTHY", "WARNING", "CRITICAL"]},
-                "risk_level": {"type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
-                "total_issues": {"type": "integer"},
-                "critical_issues": {"type": "integer"},
-                "warnings": {"type": "integer"},
-                "healthy_checks": {"type": "integer"}
-            }
-        }
+                "overall_status": {
+                    "type": "string",
+                    "enum": ["HEALTHY", "WARNING", "CRITICAL"],
+                },
+                "risk_level": {
+                    "type": "string",
+                    "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+                },
+                "total_issues": {"type": "integer", "minimum": 0},
+                "critical_issues": {"type": "integer", "minimum": 0},
+                "warnings": {"type": "integer", "minimum": 0},
+                "healthy_checks": {"type": "integer", "minimum": 0},
+                "health_score": {"type": ["number", "null"]},
+                "health_grade": {"type": ["string", "null"]},
+                "efficiency_metrics": {"type": "object"},
+                "cost_impact": {"type": "object"},
+                "capacity_outlook": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
     },
     "definitions": {
         "diagnostic_result": {
             "type": "object",
             "required": ["status", "risk_level", "issues"],
             "properties": {
-                "status": {"type": "string", "enum": ["PASS", "WARNING", "FAIL"]},
-                "risk_level": {"type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+                "status": {
+                    "type": "string",
+                    "enum": ["PASS", "WARNING", "FAIL", "SKIPPED"],
+                },
+                "risk_level": {
+                    "type": "string",
+                    "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL", "UNKNOWN"],
+                },
                 "issues": {
                     "type": "array",
-                    "items": {"$ref": "#/definitions/issue"}
+                    "items": {"$ref": "#/definitions/issue"},
                 },
                 "details": {"type": "object"},
-                "checked_at": {"type": "string", "format": "date-time"}
-            }
+                "checked_at": {"type": "string", "format": "date-time"},
+            },
+            "additionalProperties": True,
         },
         "issue": {
             "type": "object",
-            "required": ["severity", "code", "message"],
+            "required": ["severity"],
             "properties": {
-                "severity": {"type": "string", "enum": ["INFO", "WARNING", "ERROR", "CRITICAL"]},
+                "severity": {
+                    "type": "string",
+                    "enum": ["INFO", "WARNING", "ERROR", "CRITICAL"],
+                },
                 "code": {"type": "string"},
                 "message": {"type": "string"},
-                "affected_resource": {"type": "string"},
+                "title": {"type": "string"},
+                "description": {"type": "string"},
+                "affected_resource": {"type": ["string", "null"]},
                 "details": {"type": "object"},
-                "remediation": {"type": "string"}
-            }
+                "remediation": {"type": "string"},
+            },
+            "anyOf": [{"required": ["message"]}, {"required": ["title"]}],
+            "additionalProperties": True,
         },
         "node_pool": {
             "type": "object",
-            "required": ["name", "provisioning_state", "count"],
+            "required": ["name", "provisioning_state", "count", "max_pods"],
             "properties": {
-                "name": {"type": "string"},
-                "mode": {"type": "string", "enum": ["System", "User"]},
-                "provisioning_state": {"type": "string"},
-                "count": {"type": "integer"},
-                "vm_size": {"type": "string"},
-                "max_pods": {"type": "integer"},
-                "enable_auto_scaling": {"type": "boolean"},
-                "min_count": {"type": ["integer", "null"]},
-                "max_count": {"type": ["integer", "null"]},
-                "subnet_id": {"type": "string"},
-                "subnet_name": {"type": "string"},
-                "upgrade_settings": {
+                "name": {"type": ["string", "null"]},
+                "mode": {"type": ["string", "null"]},
+                "provisioning_state": {"type": ["string", "null"]},
+                "count": {"type": "integer", "minimum": 0},
+                "vm_size": {"type": ["string", "null"]},
+                "max_pods": {"type": "integer", "minimum": 0},
+                "autoscaling": {
                     "type": "object",
                     "properties": {
-                        "max_surge": {"type": ["string", "integer"]},
-                        "max_unavailable": {"type": ["string", "integer"]}
-                    }
+                        "enabled": {"type": "boolean"},
+                        "min_count": {"type": ["integer", "null"]},
+                        "max_count": {"type": ["integer", "null"]},
+                    },
+                    "additionalProperties": True,
                 },
-                "ip_allocation": {
-                    "type": "object",
-                    "properties": {
-                        "required_ips_per_node": {"type": "integer"},
-                        "total_required_ips": {"type": "integer"},
-                        "current_ip_usage": {"type": "integer"},
-                        "potential_max_ips": {"type": "integer"}
-                    }
-                },
-                "error_details": {
-                    "type": ["object", "null"],
-                    "properties": {
-                        "code": {"type": "string"},
-                        "message": {"type": "string"}
-                    }
-                }
-            }
+                "upgrade_settings": {"type": "object"},
+                "cost_estimate": {"type": "object"},
+                "error_details": {"type": ["object", "null"]},
+            },
+            "additionalProperties": True,
         },
         "subnet": {
             "type": "object",
-            "required": ["name", "address_prefix", "available_ips"],
+            "required": [
+                "name",
+                "cidr",
+                "total_ips",
+                "used_ips",
+                "available_ips",
+                "utilization_percent",
+                "status",
+            ],
             "properties": {
                 "name": {"type": "string"},
-                "id": {"type": "string"},
-                "address_prefix": {"type": "string"},
-                "address_space_size": {"type": "integer"},
-                "available_ips": {"type": "integer"},
+                "cidr": {"type": "string"},
+                "total_ips": {"type": "integer", "minimum": 0},
                 "used_ips": {"type": "integer"},
-                "reserved_ips": {"type": "integer"},
-                "usage_percentage": {"type": "number"},
-                "attached_node_pools": {
-                    "type": "array",
-                    "items": {"type": "string"}
+                "available_ips": {"type": "integer"},
+                "utilization_percent": {"type": "number"},
+                "status": {
+                    "type": "string",
+                    "enum": ["HEALTHY", "WARNING", "CRITICAL"],
                 },
-                "is_full": {"type": "boolean"},
-                "remaining_capacity": {
-                    "type": "object",
-                    "properties": {
-                        "additional_nodes_max_pods_30": {"type": "integer"},
-                        "additional_nodes_max_pods_50": {"type": "integer"},
-                        "additional_nodes_max_pods_100": {"type": "integer"}
-                    }
-                }
-            }
+                "associated_node_pools": {
+                    "type": "array",
+                    "items": {"type": ["string", "null"]},
+                },
+                "ip_breakdown": {"type": "object"},
+            },
+            "additionalProperties": True,
         },
         "recommendation": {
             "type": "object",
             "required": ["priority", "category", "title", "description"],
             "properties": {
-                "priority": {"type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
-                "category": {"type": "string", "enum": ["IP_EXHAUSTION", "SUBNET_CAPACITY", "MAX_PODS", "PROVISIONING", "CONFIGURATION"]},
+                "priority": {
+                    "type": "string",
+                    "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+                },
+                "category": {"type": "string"},
                 "title": {"type": "string"},
                 "description": {"type": "string"},
                 "affected_resources": {
                     "type": "array",
-                    "items": {"type": "string"}
+                    "items": {"type": "string"},
                 },
                 "impact": {"type": "string"},
                 "recommendation": {"type": "string"},
                 "implementation_steps": {
                     "type": "array",
-                    "items": {"type": "string"}
+                    "items": {"type": "string"},
                 },
                 "estimated_downtime": {"type": "string"},
                 "automation_available": {"type": "boolean"},
                 "documentation_links": {
                     "type": "array",
-                    "items": {"type": "string"}
-                }
-            }
-        }
-    }
+                    "items": {"type": "string"},
+                },
+            },
+            "additionalProperties": True,
+        },
+    },
 }
 
 NODE_POOL_ANALYSIS_SCHEMA = {

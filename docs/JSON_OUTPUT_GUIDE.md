@@ -1,6 +1,6 @@
 # JSON output and report conversion guide
 
-JSON is the preferred format for automation. Text output is optimized for humans; JSON output is the stable integration surface.
+JSON is the preferred format for automation. Text output is optimized for humans. The JSON contract is versioned but should still be treated as pre-1.0 and subject to compatible refinement.
 
 ## Supported formats
 
@@ -84,12 +84,13 @@ A report is organized around these sections:
   "diagnostics": {},
   "node_pools": [],
   "subnets": [],
+  "issues": [],
   "recommendations": [],
   "summary": {}
 }
 ```
 
-Additional optional sections may appear when pod-level or cost analysis is enabled.
+When optional analysis is requested in version `0.3.3`, the corresponding diagnostic appears with status `SKIPPED`; no pod-level or detailed cost payload is generated yet.
 
 ## Automation examples
 

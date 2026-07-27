@@ -1,5 +1,7 @@
 # Helm chart guide
 
+> **Current limitation:** the chart can schedule the CLI, but pod and detailed cost analysis flags are not executed by the current orchestrator. The default job output is also ephemeral unless your platform captures logs or adds a durable report sink.
+
 A Helm chart is optional for this project.
 
 You do not need Helm if users will run the tool from a laptop, a CI job, or a one-off Docker command. Helm becomes useful when you want to run the diagnostic tool inside Kubernetes as a repeatable CronJob with a service account, RBAC, and standardized values.
@@ -51,7 +53,7 @@ Set the image repository to your Docker Hub repository:
 ```yaml
 image:
   repository: "<dockerhub-user>/aks-ip-diagnostic"
-  tag: "0.3.2"
+  tag: "0.3.3"
 ```
 
 ## Install from local chart
@@ -63,7 +65,7 @@ helm template aks-ip-diagnostic charts/aks-ip-diagnostic \
   --set azure.resourceGroup="<resource-group>" \
   --set azure.clusterName="<cluster-name>" \
   --set image.repository="<dockerhub-user>/aks-ip-diagnostic" \
-  --set image.tag="0.3.2"
+  --set image.tag="0.3.3"
 
 helm install aks-ip-diagnostic charts/aks-ip-diagnostic \
   --namespace aks-ip-diagnostic \
@@ -72,7 +74,7 @@ helm install aks-ip-diagnostic charts/aks-ip-diagnostic \
   --set azure.resourceGroup="<resource-group>" \
   --set azure.clusterName="<cluster-name>" \
   --set image.repository="<dockerhub-user>/aks-ip-diagnostic" \
-  --set image.tag="0.3.2"
+  --set image.tag="0.3.3"
 ```
 
 ## Package the chart

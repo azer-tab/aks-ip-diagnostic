@@ -85,11 +85,14 @@ Contains read-only Azure collection and subnet parsing. Azure SDK calls should s
 Owns output formatting. The cleaner text output is organized for operators:
 
 - executive summary
-- executive summary
 - diagnostic results
 - subnet / CIDR capacity
 - node pools
 - recommendations
+
+## Current integration boundary
+
+The base Azure scan is active. Pod-level and detailed cost-analysis modules exist but are not yet invoked by the orchestrator; their CLI flags currently produce `SKIPPED` diagnostics. Future work should either complete this integration with tests or remove the flags until supported.
 
 ## Rules for future changes
 

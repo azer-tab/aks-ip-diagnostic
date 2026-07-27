@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aks-ip-diagnostic"
-version = "0.3.2"
-description = "Read-only AKS IP capacity and pod IP diagnostics"
+version = "0.3.3"
+description = "Read-only AKS IP capacity and network diagnostics"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{name = "Azer"}]
@@ -51,7 +51,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "."]
+pythonpath = ["src"]
 addopts = "-q"
 
 [tool.ruff]

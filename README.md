@@ -1,137 +1,60 @@
 # AKS IP Diagnostic
 
-AKS IP Diagnostic is a read-only Python CLI for checking Azure Kubernetes Service (AKS) IP capacity, subnet pressure, pod IP usage, and node-pool configuration risk.
+A read-only Python CLI that inspects Azure Kubernetes Service (AKS) networking capacity and produces operator-friendly or machine-readable reports.
 
-It is intended for platform engineers, SREs, and cloud/network teams who need a repeatable diagnostic report before scaling, upgrading, rebuilding, or investigating AKS networking incidents.
+Use it before cluster upgrades, node-pool scaling, migrations, or incident investigation to identify:
 
-## Current project state
+- subnet or pod-CIDR pressure
+- node-pool provisioning failures
+- risky `maxPods` settings
+- insufficient IP headroom for scaling and upgrades
 
-The project has been refactored from a prototype-style script into an installable CLI package.
+> **Project status:** pre-production. The base Azure scan, report generation, redaction, conversion, and validation paths are implemented. Pod-level and detailed cost-analysis flags are currently placeholders and are reported as `SKIPPED`.
 
-Current state:
+## Quick start
 
-- package version: `0.3.2`
-- preferred command: `aks-ip-diagnostic`
-- legacy compatibility: `python src/main.py` and no-subcommand CLI invocation still work
-- CI target: compile check, unit tests, Ruff, Bandit, pip-audit, and Docker build
-- release options: Docker image, optional Python package, optional Helm CronJob chart
+### 1. Install
 
-The codebase is close to release-ready, but the release gate should pass before publishing images or packages. Do not remove failing tests to unblock CI. Fix stale assertions, test fixtures, or implementation regressions instead.
-
-## What the tool answers
-
-- Is the cluster close to IP exhaustion?
-- Are node pools configured with risky or wasteful `maxPods` values?
-- Are subnets or pod CIDRs under pressure?
-- Are node pools in failed or non-succeeded provisioning states?
-- Does optional pod-level data show workload distribution or lifecycle issues?
-- Can a report be saved, validated, converted, and redacted for sharing?
-
-## Main features
-
-- AKS cluster metadata collection
-- node-pool provisioning-state checks
-- node-count and `maxPods` analysis
-- subnet or pod CIDR capacity reporting, depending on networking mode and permissions
-- optional Kubernetes pod-level analysis
-- optional estimated cost/capacity-waste analysis
-- output formats: `text`, `json`, `json-pretty`, `json-compact`, `yaml`, `markdown`, `html`
-- JSON report validation and conversion
-- sensitive-value redaction
-- deterministic exit codes for CI and automation
-- Dockerfile and optional Helm chart
-
-## Project layout
-
-```text
-.
-├── src/
-│   ├── aks_ip_diagnostic/
-│   │   ├── cli.py                  # CLI commands and argument parsing
-│   │   ├── scan_runner.py          # scan execution, validation, redaction, output
-│   │   ├── orchestrator.py         # diagnostic workflow coordination
-│   │   ├── models.py               # runtime config/result models
-│   │   ├── status.py               # status and risk helpers
-│   │   ├── redaction.py            # report redaction
-│   │   └── collectors/azure.py     # read-only Azure collection layer
-│   ├── aks_clients/                # Azure and Kubernetes SDK wrappers
-│   ├── diagnostics/                # diagnostic checks
-│   ├── reports/                    # formatters and JSON validation
-│   ├── analytics/                  # optional cost analysis support
-│   ├── utils/                      # shared helpers
-│   └── main.py                     # legacy compatibility shim
-├── tests/                          # unit and CLI tests
-├── docs/                           # operational and release documentation
-├── examples/                       # demo scripts
-├── charts/aks-ip-diagnostic/       # optional Helm CronJob chart
-├── QUICKSTART.md
-├── Dockerfile
-├── pyproject.toml
-└── README.md
-```
-
-## Installation
-
-For development, install the package and dev tooling from `pyproject.toml`:
+Python 3.10 or newer is required.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-pip install -e ".[dev]"
-```
-
-For runtime-only use:
-
-```bash
-python -m pip install --upgrade pip
 pip install .
 ```
 
-You can also install from the dependency files:
+For development:
 
 ```bash
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+pip install -e ".[dev]"
 ```
 
-## Authentication and permissions
+### 2. Authenticate to Azure
 
-Authenticate to Azure with any Azure Identity-supported method, such as Azure CLI login, managed identity, workload identity, or service principal credentials.
+The CLI uses `DefaultAzureCredential`, so Azure CLI credentials, managed identity, workload identity, and service-principal environment variables are supported.
+
+For local use:
 
 ```bash
 az login
 az account set --subscription "<subscription-id>"
-az account show
 ```
 
-For optional pod-level analysis, configure Kubernetes access:
+Azure `Reader` access is normally sufficient for the base scan. Use the narrowest practical scope that includes the AKS cluster and its networking resources.
 
-```bash
-az aks get-credentials \
-  --resource-group "<resource-group>" \
-  --name "<cluster-name>"
-
-kubectl cluster-info
-kubectl auth can-i list nodes
-kubectl auth can-i list pods --all-namespaces
-```
-
-Azure `Reader` at the resource group or subscription scope is usually sufficient for the Azure checks. Pod-level analysis requires Kubernetes read access to pods, nodes, and namespaces. See `docs/PRODUCTION_READINESS.md` for stricter least-privilege guidance.
-
-## Quick start
-
-Run a basic read-only scan:
+### 3. Run a scan
 
 ```bash
 aks-ip-diagnostic scan \
   --subscription-id "<subscription-id>" \
   --resource-group "<resource-group>" \
-  --cluster-name "<cluster-name>" \
-  --format text
+  --cluster-name "<cluster-name>"
 ```
 
-Save a JSON report:
+Text output is printed to the terminal. Non-text formats are saved under `./reports/` unless `--output` is supplied.
+
+Save a validated JSON report:
 
 ```bash
 aks-ip-diagnostic scan \
@@ -139,52 +62,13 @@ aks-ip-diagnostic scan \
   --resource-group "<resource-group>" \
   --cluster-name "<cluster-name>" \
   --format json-pretty \
+  --validate-schema \
   --output reports/aks-ip-report.json
-```
-
-Run with Kubernetes pod-level analysis:
-
-```bash
-aks-ip-diagnostic scan \
-  --subscription-id "<subscription-id>" \
-  --resource-group "<resource-group>" \
-  --cluster-name "<cluster-name>" \
-  --include-pod-analysis \
-  --format text
-```
-
-Run with pod-level and estimated cost analysis:
-
-```bash
-aks-ip-diagnostic scan \
-  --subscription-id "<subscription-id>" \
-  --resource-group "<resource-group>" \
-  --cluster-name "<cluster-name>" \
-  --include-pod-analysis \
-  --include-cost-analysis \
-  --region eastus \
-  --format json-pretty \
-  --output reports/aks-ip-cost-report.json
-```
-
-Generate a redacted report for sharing:
-
-```bash
-aks-ip-diagnostic scan \
-  --subscription-id "<subscription-id>" \
-  --resource-group "<resource-group>" \
-  --cluster-name "<cluster-name>" \
-  --include-pod-analysis \
-  --redact \
-  --format markdown \
-  --output reports/redacted-report.md
 ```
 
 ## Commands
 
-### `scan`
-
-Runs an AKS diagnostic scan.
+### Scan a cluster
 
 ```bash
 aks-ip-diagnostic scan [options]
@@ -192,38 +76,39 @@ aks-ip-diagnostic scan [options]
 
 Required options:
 
-```text
---subscription-id     Azure subscription ID
---resource-group      Azure resource group containing the AKS cluster
---cluster-name        AKS cluster name
-```
+| Option | Description |
+|---|---|
+| `--subscription-id` | Azure subscription ID |
+| `--resource-group` | Resource group containing the AKS cluster |
+| `--cluster-name` | AKS cluster name |
 
 Common options:
 
-```text
---format, -f          text, json, json-pretty, json-compact, yaml, markdown, html
---output, -o          output file path
---include-pod-analysis
---include-cost-analysis
---region              Azure region used for cost estimates; default: eastus
---pod-lifecycle       include pod lifecycle analysis
---kubeconfig          path to kubeconfig file
---redact              redact sensitive identifiers and IP addresses
---validate-schema     validate generated report data before formatting/saving
---verbose             enable debug logging
-```
+| Option | Description |
+|---|---|
+| `--format`, `-f` | `text`, `json`, `json-pretty`, `json-compact`, `yaml`, `markdown`, or `html` |
+| `--output`, `-o` | Explicit output path |
+| `--redact` | Mask identifiers and IP addresses in the final report |
+| `--validate-schema` | Validate generated report data before writing it |
+| `--verbose` | Enable debug logging |
 
-### `validate`
+Accepted but not fully implemented in the current orchestrator:
 
-Validates an existing JSON report:
+| Option | Current behaviour |
+|---|---|
+| `--include-pod-analysis` | Adds a `pod_analysis` diagnostic with status `SKIPPED` |
+| `--include-cost-analysis` | Adds a `cost_analysis` diagnostic with status `SKIPPED` |
+| `--pod-lifecycle` | Parsed but not executed |
+| `--kubeconfig` | Parsed but not used by the current scan workflow |
+| `--region` | Parsed, but the built-in heuristic cost table is not region-aware |
+
+### Validate a JSON report
 
 ```bash
 aks-ip-diagnostic validate reports/aks-ip-report.json
 ```
 
-### `convert`
-
-Converts an existing JSON report to another format:
+### Convert a JSON report
 
 ```bash
 aks-ip-diagnostic convert reports/aks-ip-report.json \
@@ -231,7 +116,7 @@ aks-ip-diagnostic convert reports/aks-ip-report.json \
   --output reports/aks-ip-report.md
 ```
 
-Redact during conversion:
+Redact while converting:
 
 ```bash
 aks-ip-diagnostic convert reports/aks-ip-report.json \
@@ -240,51 +125,30 @@ aks-ip-diagnostic convert reports/aks-ip-report.json \
   --output reports/redacted-report.html
 ```
 
-### `version`
-
-Prints the installed version:
+### Show the version
 
 ```bash
 aks-ip-diagnostic version
 ```
 
-## Backward compatibility
+## What the base scan does
 
-The historical no-subcommand form is still treated as `scan`:
+The implemented scan path:
 
-```bash
-aks-ip-diagnostic \
-  --subscription-id "<subscription-id>" \
-  --resource-group "<resource-group>" \
-  --cluster-name "<cluster-name>"
-```
+1. Reads AKS cluster metadata.
+2. Lists node pools.
+3. Discovers referenced virtual-network subnets.
+4. Falls back to the cluster pod CIDR when no custom subnet is available.
+5. Runs IP-exhaustion, provisioning-state, subnet-capacity, and `maxPods` checks.
+6. Builds a structured report.
+7. Optionally validates and redacts the report.
+8. Formats the report and returns an automation-friendly exit code.
 
-The legacy script path also remains available:
+The tool does not create, update, patch, or delete Azure or Kubernetes resources.
 
-```bash
-python src/main.py \
-  --subscription-id "<subscription-id>" \
-  --resource-group "<resource-group>" \
-  --cluster-name "<cluster-name>"
-```
+## Reports
 
-New automation should use the installed `aks-ip-diagnostic` command.
-
-## Output and reports
-
-Text output is intended for operators at a terminal. JSON is the preferred automation surface. Use `json-pretty` for human-readable saved reports and `json-compact` for pipelines.
-
-Typical text sections include:
-
-```text
-Executive summary
-Diagnostic results
-Subnet / CIDR capacity
-Node pools
-Recommendations
-```
-
-A JSON report is organized around these top-level sections:
+The JSON report has these top-level sections:
 
 ```json
 {
@@ -293,45 +157,88 @@ A JSON report is organized around these top-level sections:
   "diagnostics": {},
   "node_pools": [],
   "subnets": [],
+  "issues": [],
   "recommendations": [],
   "summary": {}
 }
 ```
 
-See `docs/JSON_OUTPUT_GUIDE.md` for report validation, conversion, and automation examples.
+Use JSON for automation. Treat the current report contract as versioned but not yet stable enough for a `1.0` compatibility guarantee.
 
-## Exit codes
+### Exit codes
 
-```text
-0  Healthy scan or successful utility command
-1  Scan completed with warnings
-2  Scan completed with critical findings
-3  Runtime, authentication, Azure API, or Kubernetes API failure
-4  Invalid CLI usage
-5  Report validation or conversion failure
-```
+| Code | Meaning |
+|---:|---|
+| `0` | Healthy scan or successful utility command |
+| `1` | Scan completed with warnings |
+| `2` | Scan completed with critical findings |
+| `3` | Runtime, authentication, Azure API, or Kubernetes API failure |
+| `4` | Invalid CLI usage |
+| `5` | Report validation or conversion failure |
 
 Example CI gate:
 
 ```bash
+set +e
 aks-ip-diagnostic scan \
   --subscription-id "$AZURE_SUBSCRIPTION_ID" \
   --resource-group "$RESOURCE_GROUP" \
   --cluster-name "$CLUSTER_NAME" \
-  --format json-pretty \
+  --format json-compact \
+  --validate-schema \
   --output diagnostic-report.json
+status=$?
+set -e
 
-case "$?" in
-  0) echo "AKS IP diagnostic passed" ;;
-  1) echo "AKS IP diagnostic found warnings" ;;
-  2) echo "AKS IP diagnostic found critical issues"; exit 2 ;;
-  *) echo "AKS IP diagnostic failed to run"; exit 3 ;;
+case "$status" in
+  0) echo "Healthy" ;;
+  1) echo "Warnings found" ;;
+  2) echo "Critical findings"; exit 2 ;;
+  *) echo "Diagnostic failed with exit code $status"; exit "$status" ;;
 esac
 ```
 
-## Development and CI
+## Docker
 
-Run the same core checks locally before pushing:
+```bash
+docker build -t aks-ip-diagnostic:local .
+docker run --rm aks-ip-diagnostic:local version
+```
+
+Run with service-principal environment variables:
+
+```bash
+docker run --rm \
+  -e AZURE_CLIENT_ID \
+  -e AZURE_TENANT_ID \
+  -e AZURE_CLIENT_SECRET \
+  aks-ip-diagnostic:local scan \
+    --subscription-id "<subscription-id>" \
+    --resource-group "<resource-group>" \
+    --cluster-name "<cluster-name>"
+```
+
+## Architecture
+
+```text
+CLI
+└── scan runner
+    ├── scan configuration
+    ├── orchestrator
+    │   ├── Azure collector and SDK wrappers
+    │   ├── diagnostic rules
+    │   └── report builder
+    ├── schema validation
+    ├── redaction
+    ├── formatting
+    └── exit-code mapping
+```
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for module responsibilities and extension points.
+
+## Development
+
+Run the local checks before opening a pull request:
 
 ```bash
 python -m compileall -q src tests examples
@@ -342,78 +249,37 @@ bandit -r src -x tests
 pip-audit
 ```
 
-The current orchestrator-related failure was a stale formatter expectation: the test expected operator-friendly section labels that the formatter did not emit consistently. The right fix is to align the formatter and tests, not delete the test file. Orchestrator tests are valuable because they prove the scan workflow can be exercised with fake collectors and no live Azure dependency.
+The GitHub CI workflow runs these checks across Python 3.10, 3.11, and 3.12 and also builds the Docker image.
 
-## Docker
+## Production readiness
 
-Build and smoke-test the image:
+Do not publish this as a production-supported tool until the high-priority items in [`docs/PRODUCTION_REVIEW.md`](docs/PRODUCTION_REVIEW.md) are resolved. The main gaps are:
 
-```bash
-docker build -t aks-ip-diagnostic:local .
-docker run --rm aks-ip-diagnostic:local version
-docker run --rm aks-ip-diagnostic:local --help
-```
+- optional pod and detailed cost analyses are not wired into the orchestrator
+- no live Azure integration or recorded-contract test suite exists
+- cost figures use a static heuristic table and should not be treated as billing data
+- dependency resolution is not locked or reproducible
+- release publishing needs stronger guards and provenance controls
+- large diagnostic and formatting modules should be split before significant feature growth
 
-Run a scan with service principal environment variables:
-
-```bash
-docker run --rm \
-  -e AZURE_CLIENT_ID \
-  -e AZURE_TENANT_ID \
-  -e AZURE_CLIENT_SECRET \
-  aks-ip-diagnostic:local scan \
-    --subscription-id "<subscription-id>" \
-    --resource-group "<resource-group>" \
-    --cluster-name "<cluster-name>" \
-    --format text
-```
-
-For pod-level analysis with a local kubeconfig:
-
-```bash
-docker run --rm \
-  -v "$HOME/.kube:/home/appuser/.kube:ro" \
-  aks-ip-diagnostic:local scan \
-    --subscription-id "<subscription-id>" \
-    --resource-group "<resource-group>" \
-    --cluster-name "<cluster-name>" \
-    --include-pod-analysis \
-    --kubeconfig /home/appuser/.kube/config
-```
-
-## Documentation map
+## Documentation
 
 | Document | Purpose |
 |---|---|
-| `QUICKSTART.md` | Short setup and first-run guide. |
-| `docs/DOCS_INDEX.md` | Documentation ownership and update checklist. |
-| `docs/PRODUCTION_READINESS.md` | Release gates, safety model, permissions, and operational checks. |
-| `docs/REFACTORING_NOTES.md` | Architecture notes for the CLI/orchestrator refactor. |
-| `docs/JSON_OUTPUT_GUIDE.md` | JSON output, validation, conversion, and automation usage. |
-| `docs/POD_LEVEL_ANALYSIS.md` | Optional Kubernetes pod-level analysis behavior and RBAC. |
-| `docs/COST_ANALYSIS_GUIDE.md` | Cost-estimation logic, caveats, and safe interpretation. |
-| `docs/RELEASE_GUIDE.md` | Docker Hub, Python package, GitHub release, and versioning process. |
-| `docs/HELM_CHART_GUIDE.md` | Optional Helm/CronJob deployment guide. |
-| `docs/CODE_QUALITY_NOTES.md` | Local quality gates and notes from recent test/refactor cleanup. |
+| [`QUICKSTART.md`](QUICKSTART.md) | Minimal installation and first-scan path |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Execution flow and module ownership |
+| [`docs/PRODUCTION_REVIEW.md`](docs/PRODUCTION_REVIEW.md) | Prioritised production-readiness findings |
+| [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md) | Release gate, permissions, and operating rules |
+| [`docs/JSON_OUTPUT_GUIDE.md`](docs/JSON_OUTPUT_GUIDE.md) | Report validation, conversion, and automation |
+| [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | Common runtime and report problems |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contributor setup and change rules |
+| [`docs/RELEASE_GUIDE.md`](docs/RELEASE_GUIDE.md) | Versioning and release process |
+| [`docs/DOCS_INDEX.md`](docs/DOCS_INDEX.md) | Documentation ownership map |
 
-## Safety model
+## Safety and limitations
 
-This tool is intended to be read-only.
-
-Expected behavior:
-
-- no Azure create/update/delete operations
-- no Kubernetes create/update/patch/delete operations
-- no pod execution
-- no node mutation
-- no workload mutation
-
-Recommendations may describe remediation steps, but the tool should not perform remediation.
-
-## Known limitations
-
-- Cost analysis is estimated and should be verified against Azure billing data and current pricing before financial decisions.
-- Pod-level analysis requires Kubernetes API access and can fail independently from the base Azure scan.
-- Some subnet details depend on AKS networking mode and Azure permissions.
-- Redaction reduces exposure but does not replace a formal data-classification review.
-- The JSON schema should be protected with golden-file tests before declaring a stable `1.0.0` report contract.
+- The tool is intended to be read-only.
+- Redaction reduces exposure but does not replace a data-classification review.
+- Capacity calculations depend on Azure SDK data and networking mode.
+- Cost values are rough estimates, not invoices or pricing guarantees.
+- Validate recommendations against the cluster’s networking design before making changes.

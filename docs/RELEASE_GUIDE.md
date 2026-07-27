@@ -4,7 +4,7 @@ This guide covers the practical release options for this project: Docker Hub, Py
 
 ## Should this project be pushed to Docker Hub?
 
-Yes, it is reasonable to publish a Docker image for this project. The current Dockerfile already supports a production-style CLI image:
+A Docker image is a reasonable distribution format, but version `0.3.3` should be treated as experimental or internal until the Priority 0 items in `PRODUCTION_REVIEW.md` are resolved. The current Dockerfile provides a useful hardened baseline:
 
 - slim Python base image
 - non-root runtime user
@@ -35,7 +35,7 @@ Replace `<dockerhub-user>` with your Docker Hub namespace and `<version>` with t
 
 ```bash
 export IMAGE_NAME=<dockerhub-user>/aks-ip-diagnostic
-export VERSION=0.3.2
+export VERSION=0.3.3
 
 docker login
 
@@ -62,7 +62,7 @@ Also set repository variable `PUBLISH_DOCKERHUB=true` if you want the release wo
 Recommended tag strategy:
 
 - `latest` only for the newest stable release
-- semantic version tag, for example `0.3.2`
+- semantic version tag, for example `0.3.3`
 - optionally major/minor tag, for example `0.3`
 
 Do not publish every branch as `latest`. Publish only from Git tags or GitHub releases.
@@ -139,7 +139,7 @@ Use semantic versioning:
 
 | Change type | Example | Version bump |
 |---|---|---|
-| bugfix/docs only | test fix, README update | patch: `0.3.0` → `0.3.2` |
+| bugfix/docs only | test fix, README update | patch: `0.3.0` → `0.3.3` |
 | backward-compatible feature | new flag or output mode | minor: `0.3.0` → `0.4.0` |
 | breaking CLI/report schema change | changed JSON contract | major: `1.0.0` → `2.0.0` |
 
@@ -149,8 +149,8 @@ Use semantic versioning:
 git status
 git diff
 git add .
-git commit -m "Prepare v0.3.2 release"
-git tag v0.3.2
+git commit -m "Prepare v0.3.3 release"
+git tag v0.3.3
 git push origin main --tags
 ```
 
@@ -163,8 +163,9 @@ Attach these artifacts to the GitHub release if useful:
 
 ## Release readiness answer
 
-Current state after this documentation/chart pass:
+Current state:
 
-- Docker Hub: ready after CI passes and you configure Docker Hub credentials.
-- Python package: ready for TestPyPI validation; public PyPI is optional.
-- Helm package: optional, useful only for scheduled in-cluster scans.
+- Docker image: suitable for internal testing after the full release gate passes; not yet a production support commitment.
+- Python package: suitable for clean-environment/TestPyPI validation.
+- Helm chart: experimental until durable report storage and identity guidance are implemented.
+- Public release: defer until the Priority 0 production-review items are resolved.

@@ -2,9 +2,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.aks_clients.aks_client import AKSClient
-from src.aks_clients.exceptions import AzureResourceLookupError
-from src.aks_clients.network_client import NetworkClient
+from aks_clients.aks_client import AKSClient
+from aks_clients.exceptions import AzureResourceLookupError
+from aks_clients.network_client import NetworkClient
 
 
 class _ManagedClusters:

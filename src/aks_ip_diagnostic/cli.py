@@ -39,16 +39,16 @@ def _add_scan_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--output", "-o", help="Output file path")
     parser.add_argument(
-        "--include-pod-analysis", action="store_true", help="Include pod-level IP usage analysis"
+        "--include-pod-analysis", action="store_true", help="Request pod-level analysis (currently reported as SKIPPED)"
     )
     parser.add_argument(
-        "--include-cost-analysis", action="store_true", help="Include estimated cost analysis"
+        "--include-cost-analysis", action="store_true", help="Request detailed cost analysis (currently reported as SKIPPED)"
     )
-    parser.add_argument("--region", default="eastus", help="Azure region for cost estimates")
+    parser.add_argument("--region", default="eastus", help="Reserved region option for future cost analysis")
     parser.add_argument(
-        "--pod-lifecycle", action="store_true", help="Include pod lifecycle analysis"
+        "--pod-lifecycle", action="store_true", help="Reserved option for future pod lifecycle analysis"
     )
-    parser.add_argument("--kubeconfig", help="Path to kubeconfig file")
+    parser.add_argument("--kubeconfig", help="Reserved kubeconfig path for future pod analysis")
     parser.add_argument(
         "--redact",
         action="store_true",
@@ -65,7 +65,7 @@ def _add_scan_args(parser: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = ProductionArgumentParser(
         prog="aks-ip-diagnostic",
-        description="Read-only AKS IP capacity and pod IP diagnostic tool",
+        description="Read-only AKS IP capacity and network diagnostic tool",
     )
     subparsers = parser.add_subparsers(dest="command")
 

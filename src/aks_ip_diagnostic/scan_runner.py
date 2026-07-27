@@ -10,7 +10,7 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-from aks_ip_diagnostic.exit_codes import RUNTIME_ERROR, code_for_status
+from aks_ip_diagnostic.exit_codes import RUNTIME_ERROR, VALIDATION_FAILED, code_for_status
 from aks_ip_diagnostic.models import ScanConfig, ScanResult
 from aks_ip_diagnostic.orchestrator import AKSDiagnosticOrchestrator
 from aks_ip_diagnostic.paths import get_report_path
@@ -71,7 +71,7 @@ def run_diagnostic(args) -> int:
                 print("Generated report failed schema validation", file=sys.stderr)
                 for error in validation_errors:
                     print(f"- {error}", file=sys.stderr)
-                return RUNTIME_ERROR
+                return VALIDATION_FAILED
 
         if config.redact:
             report = redact_report(report)

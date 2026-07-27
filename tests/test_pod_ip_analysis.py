@@ -1,4 +1,4 @@
-from src.diagnostics.pod_ip_analysis import PodIPAnalyzer
+from diagnostics.pod_ip_analysis import PodIPAnalyzer
 
 
 def _node(name: str, allocatable: int = 30, pool: str = "user") -> dict:
