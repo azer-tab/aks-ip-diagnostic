@@ -39,14 +39,22 @@ def _add_scan_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--output", "-o", help="Output file path")
     parser.add_argument(
-        "--include-pod-analysis", action="store_true", help="Request pod-level analysis (currently reported as SKIPPED)"
+        "--include-pod-analysis",
+        action="store_true",
+        help="Request pod-level analysis (currently reported as SKIPPED)",
     )
     parser.add_argument(
-        "--include-cost-analysis", action="store_true", help="Request detailed cost analysis (currently reported as SKIPPED)"
+        "--include-cost-analysis",
+        action="store_true",
+        help="Request detailed cost analysis (currently reported as SKIPPED)",
     )
-    parser.add_argument("--region", default="eastus", help="Reserved region option for future cost analysis")
     parser.add_argument(
-        "--pod-lifecycle", action="store_true", help="Reserved option for future pod lifecycle analysis"
+        "--region", default="eastus", help="Reserved region option for future cost analysis"
+    )
+    parser.add_argument(
+        "--pod-lifecycle",
+        action="store_true",
+        help="Reserved option for future pod lifecycle analysis",
     )
     parser.add_argument("--kubeconfig", help="Reserved kubeconfig path for future pod analysis")
     parser.add_argument(

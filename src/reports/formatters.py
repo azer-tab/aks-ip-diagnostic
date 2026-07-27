@@ -3,12 +3,11 @@
 import json
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
 from aks_ip_diagnostic import __version__
-
 
 # datetime.UTC was added in Python 3.11. timezone.utc keeps the package
 # compatible with the declared Python 3.10+ support range.
@@ -31,26 +30,24 @@ class JSONFormatter:
     """Enhanced JSON formatter with multiple style options."""
 
     @staticmethod
-    def format_compact(data: Dict[str, Any]) -> str:
+    def format_compact(data: dict[str, Any]) -> str:
         """Format as compact JSON (single line)."""
         return json.dumps(data, separators=(",", ":"), ensure_ascii=False)
 
     @staticmethod
-    def format_pretty(data: Dict[str, Any], indent: int = 2) -> str:
+    def format_pretty(data: dict[str, Any], indent: int = 2) -> str:
         """Format as pretty-printed JSON with indentation."""
         return json.dumps(data, indent=indent, ensure_ascii=False, sort_keys=False)
 
     @staticmethod
-    def format_sorted(data: Dict[str, Any], indent: int = 2) -> str:
+    def format_sorted(data: dict[str, Any], indent: int = 2) -> str:
         """Format as pretty-printed JSON with sorted keys."""
         return json.dumps(data, indent=indent, ensure_ascii=False, sort_keys=True)
 
     @staticmethod
-    def format_minimal(data: Dict[str, Any]) -> str:
+    def format_minimal(data: dict[str, Any]) -> str:
         """Format with minimal whitespace but remain readable."""
-        return json.dumps(
-            data, indent=None, separators=(", ", ": "), ensure_ascii=False
-        )
+        return json.dumps(data, indent=None, separators=(", ", ": "), ensure_ascii=False)
 
 
 class DiagnosticReportBuilder:
@@ -107,8 +104,8 @@ class DiagnosticReportBuilder:
         diagnostic_type: str,
         status: str,
         risk_level: str,
-        issues: List[Dict],
-        details: Dict = None,  # type: ignore
+        issues: list[dict],
+        details: dict = None,  # type: ignore
     ):
         """Add a diagnostic result."""
         self.data["diagnostics"][diagnostic_type] = {
@@ -120,22 +117,22 @@ class DiagnosticReportBuilder:
         }
         return self
 
-    def add_node_pool(self, node_pool_data: Dict):
+    def add_node_pool(self, node_pool_data: dict):
         """Add node pool information."""
         self.data["node_pools"].append(node_pool_data)
         return self
 
-    def add_subnet(self, subnet_data: Dict):
+    def add_subnet(self, subnet_data: dict):
         """Add subnet information."""
         self.data["subnets"].append(subnet_data)
         return self
 
-    def add_recommendation(self, recommendation: Dict):
+    def add_recommendation(self, recommendation: dict):
         """Add a recommendation."""
         self.data["recommendations"].append(recommendation)
         return self
 
-    def add_issue(self, issue: Dict):
+    def add_issue(self, issue: dict):
         """Add an issue to the diagnostics section."""
         # Store issues in a general issues list if it doesn't exist
         if "issues" not in self.data:
@@ -147,10 +144,10 @@ class DiagnosticReportBuilder:
         self,
         overall_status: str,
         risk_level: str,
-        health_score: Dict = None,  # type: ignore
-        efficiency_metrics: Dict = None,  # type: ignore
-        cost_impact: Dict = None,  # type: ignore
-        capacity_outlook: Dict = None,  # type: ignore
+        health_score: dict = None,  # type: ignore
+        efficiency_metrics: dict = None,  # type: ignore
+        cost_impact: dict = None,  # type: ignore
+        capacity_outlook: dict = None,  # type: ignore
     ):
         """Set comprehensive summary information with health scoring and efficiency metrics."""
         # The top-level issues array is the canonical issue collection.
@@ -202,7 +199,7 @@ class DiagnosticReportBuilder:
 
         return self
 
-    def build(self) -> Dict:
+    def build(self) -> dict:
         """Build and return the complete report data."""
         return self.data
 
@@ -212,9 +209,9 @@ def create_issue(
     code: str,
     message: str,
     affected_resource: str = None,  # type: ignore
-    details: Dict = None,  # type: ignore
+    details: dict = None,  # type: ignore
     remediation: str = None,  # type: ignore
-) -> Dict:
+) -> dict:
     """Create a structured issue object."""
     issue = {"severity": severity, "code": code, "message": message}
     if affected_resource:
@@ -231,14 +228,14 @@ def create_recommendation(
     category: str,
     title: str,
     description: str,
-    affected_resources: List[str] = None,  # type: ignore
+    affected_resources: list[str] = None,  # type: ignore
     impact: str = None,  # type: ignore
     recommendation: str = None,  # type: ignore
-    steps: List[str] = None,  # type: ignore
+    steps: list[str] = None,  # type: ignore
     downtime: str = None,  # type: ignore
     automation: bool = False,
-    docs: List[str] = None,  # type: ignore
-) -> Dict:
+    docs: list[str] = None,  # type: ignore
+) -> dict:
     """Create a structured recommendation object."""
     rec = {
         "priority": priority,
@@ -262,9 +259,7 @@ def create_recommendation(
     return rec
 
 
-def format_report(
-    report_data: Dict, output_format: OutputFormat = OutputFormat.JSON_PRETTY
-) -> str:
+def format_report(report_data: dict, output_format: OutputFormat = OutputFormat.JSON_PRETTY) -> str:
     """Format report data according to specified output format."""
     if output_format == OutputFormat.JSON_COMPACT:
         return JSONFormatter.format_compact(report_data)
@@ -284,7 +279,7 @@ def format_report(
         return JSONFormatter.format_pretty(report_data)
 
 
-def _format_cost_analysis_text(cost_data: Dict) -> List[str]:
+def _format_cost_analysis_text(cost_data: dict) -> list[str]:
     """Helper function to format cost analysis section for text reports.
 
     Extracts cost information from the diagnostic details and formats it
@@ -327,9 +322,7 @@ def _format_cost_analysis_text(cost_data: Dict) -> List[str]:
 
         # Alert if waste exceeds 20% threshold (same as pod analysis warning level)
         if waste_pct > 20:
-            lines.append(
-                f"    ⚠️  High waste detected - over 20% of IP costs are wasted!"
-            )
+            lines.append("    ⚠️  High waste detected - over 20% of IP costs are wasted!")
 
     # Total potential savings - combines all optimization opportunities
     total_savings = details.get("total_potential_savings", {})
@@ -347,9 +340,7 @@ def _format_cost_analysis_text(cost_data: Dict) -> List[str]:
         payback = roi.get("payback_period_months", 0)
         if payback > 0:
             lines.append(f"    Payback Period: {payback:.1f} months")
-        lines.append(
-            f"    3-Year ROI:     {roi.get('three_year_roi_percentage', 0):.0f}%"
-        )
+        lines.append(f"    3-Year ROI:     {roi.get('three_year_roi_percentage', 0):.0f}%")
 
         impl_effort = roi.get("implementation_effort", "Unknown")
         lines.append(f"    Implementation: {impl_effort}")
@@ -364,7 +355,7 @@ def _format_cost_analysis_text(cost_data: Dict) -> List[str]:
     return lines
 
 
-def format_text_report(report_data: Dict) -> str:
+def format_text_report(report_data: dict) -> str:
     """Format report as human-readable text."""
     lines = [
         "AKS IP Diagnostic Report",
@@ -394,9 +385,7 @@ def format_text_report(report_data: Dict) -> str:
     summary = report_data.get("summary", {})
     overall_status = summary.get("overall_status")
     status_icon = (
-        "✅"
-        if overall_status == "HEALTHY"
-        else "⚠️" if overall_status == "WARNING" else "❌"
+        "✅" if overall_status == "HEALTHY" else "⚠️" if overall_status == "WARNING" else "❌"
     )
 
     lines.append("-" * 80)
@@ -423,15 +412,9 @@ def format_text_report(report_data: Dict) -> str:
         lines.append("-" * 80)
         for i, issue in enumerate(all_issues, 1):
             severity = issue.get("severity", "UNKNOWN")
-            icon = (
-                "❌"
-                if severity == "CRITICAL"
-                else "⚠️" if severity == "WARNING" else "ℹ️"
-            )
+            icon = "❌" if severity == "CRITICAL" else "⚠️" if severity == "WARNING" else "ℹ️"
 
-            lines.append(
-                f"\n{i}. {icon} [{severity}] {issue.get('message', 'No message')}"
-            )
+            lines.append(f"\n{i}. {icon} [{severity}] {issue.get('message', 'No message')}")
             if issue.get("affected_resource"):
                 lines.append(f"   Resource: {issue.get('affected_resource')}")
             if issue.get("code"):
@@ -439,28 +422,23 @@ def format_text_report(report_data: Dict) -> str:
 
             # Display details if available
             details = issue.get("details", {})
-            if details:
-                if isinstance(details, dict):
-                    if details.get("description"):
-                        lines.append(f"   Details: {details['description']}")
-                    # Display subnet capacity details
-                    if details.get("subnet_cidr"):
-                        lines.append(f"   Subnet CIDR: {details['subnet_cidr']}")
-                    if details.get("allocated_ips") is not None:
-                        lines.append(f"   Allocated IPs: {details['allocated_ips']}")
-                    if details.get("total_ips") is not None:
-                        lines.append(f"   Total IPs: {details['total_ips']}")
-                    if details.get("utilization_percent") is not None:
-                        lines.append(
-                            f"   Utilization: {details['utilization_percent']:.1f}%"
-                        )
-                    if details.get("available_ips") is not None:
-                        lines.append(f"   Available IPs: {details['available_ips']}")
-                    # Display recommendations
-                    if details.get("recommendation"):
-                        lines.append(
-                            f"   💡 Recommendation: {details['recommendation']}"
-                        )
+            if details and isinstance(details, dict):
+                if details.get("description"):
+                    lines.append(f"   Details: {details['description']}")
+                # Display subnet capacity details
+                if details.get("subnet_cidr"):
+                    lines.append(f"   Subnet CIDR: {details['subnet_cidr']}")
+                if details.get("allocated_ips") is not None:
+                    lines.append(f"   Allocated IPs: {details['allocated_ips']}")
+                if details.get("total_ips") is not None:
+                    lines.append(f"   Total IPs: {details['total_ips']}")
+                if details.get("utilization_percent") is not None:
+                    lines.append(f"   Utilization: {details['utilization_percent']:.1f}%")
+                if details.get("available_ips") is not None:
+                    lines.append(f"   Available IPs: {details['available_ips']}")
+                # Display recommendations
+                if details.get("recommendation"):
+                    lines.append(f"   💡 Recommendation: {details['recommendation']}")
         lines.append("")
 
     # Diagnostics
@@ -483,16 +461,10 @@ def format_text_report(report_data: Dict) -> str:
                 lines.append("  Issues:")
                 for issue in issues:
                     severity = issue.get("severity", "UNKNOWN")
-                    icon = (
-                        "❌"
-                        if severity == "CRITICAL"
-                        else "⚠️" if severity == "WARNING" else "ℹ️"
-                    )
+                    icon = "❌" if severity == "CRITICAL" else "⚠️" if severity == "WARNING" else "ℹ️"
                     lines.append(f"    {icon} [{severity}] {issue.get('message')}")
                     if issue.get("affected_resource"):
-                        lines.append(
-                            f"       Resource: {issue.get('affected_resource')}"
-                        )
+                        lines.append(f"       Resource: {issue.get('affected_resource')}")
             else:
                 lines.append("  ✅ No issues found")
         lines.append("")
@@ -533,9 +505,7 @@ def format_text_report(report_data: Dict) -> str:
         lines.append("-" * 80)
         for pool in node_pools:
             state = pool.get("provisioning_state", "Unknown")
-            state_icon = (
-                "✅" if state == "Succeeded" else "❌" if state == "Failed" else "⚠️"
-            )
+            state_icon = "✅" if state == "Succeeded" else "❌" if state == "Failed" else "⚠️"
 
             lines.append(f"\n{state_icon} {pool.get('name')}:")
             lines.append(f"  Mode: {pool.get('mode')}")
@@ -557,9 +527,7 @@ def format_text_report(report_data: Dict) -> str:
 
             if pool.get("error_details"):
                 error = pool["error_details"]
-                lines.append(
-                    f"  ❌ ERROR: [{error.get('code')}] {error.get('message')}"
-                )
+                lines.append(f"  ❌ ERROR: [{error.get('code')}] {error.get('message')}")
         lines.append("")
 
     # Recommendations
@@ -570,9 +538,7 @@ def format_text_report(report_data: Dict) -> str:
         lines.append("-" * 80)
         for i, rec in enumerate(recommendations, 1):
             priority = rec.get("priority", "MEDIUM")
-            icon = (
-                "❌" if priority == "CRITICAL" else "⚠️" if priority == "HIGH" else "💡"
-            )
+            icon = "❌" if priority == "CRITICAL" else "⚠️" if priority == "HIGH" else "💡"
 
             lines.append(f"\n{i}. {icon} [{priority}] {rec.get('title')}")
             lines.append(f"   {rec.get('description')}")
@@ -596,19 +562,17 @@ def format_text_report(report_data: Dict) -> str:
                     lines.append(f"     {step_num}. {step}")
 
             if rec.get("estimated_downtime"):
-                lines.append(
-                    f"   ⏱️  Estimated Downtime: {rec.get('estimated_downtime')}"
-                )
+                lines.append(f"   ⏱️  Estimated Downtime: {rec.get('estimated_downtime')}")
 
             if rec.get("automation_available"):
-                lines.append(f"   🤖 Automation: Available")
+                lines.append("   🤖 Automation: Available")
         lines.append("")
 
     lines.append("=" * 80)
     return "\n".join(lines)
 
 
-def format_markdown_report(report_data: Dict) -> str:
+def format_markdown_report(report_data: dict) -> str:
     """Format report as Markdown."""
     lines = []
     lines.append("# AKS IP Exhaustion Diagnostic Report")
@@ -632,7 +596,9 @@ def format_markdown_report(report_data: Dict) -> str:
     status_emoji = (
         "🟢"
         if summary.get("overall_status") == "HEALTHY"
-        else "🔴" if summary.get("overall_status") == "CRITICAL" else "🟡"
+        else "🔴"
+        if summary.get("overall_status") == "CRITICAL"
+        else "🟡"
     )
     lines.append(f"{status_emoji} **Overall Status**: {summary.get('overall_status')}")
     lines.append(f"- **Risk Level**: {summary.get('risk_level')}")
@@ -656,7 +622,9 @@ def format_markdown_report(report_data: Dict) -> str:
                 severity_emoji = (
                     "🔴"
                     if issue.get("severity") in ["CRITICAL", "ERROR"]
-                    else "🟡" if issue.get("severity") == "WARNING" else "ℹ️"
+                    else "🟡"
+                    if issue.get("severity") == "WARNING"
+                    else "ℹ️"
                 )
                 lines.append(f"- {severity_emoji} {issue.get('message')}")
         else:
@@ -672,7 +640,9 @@ def format_markdown_report(report_data: Dict) -> str:
             priority_emoji = (
                 "🔴"
                 if rec.get("priority") == "CRITICAL"
-                else "🟡" if rec.get("priority") == "HIGH" else "🔵"
+                else "🟡"
+                if rec.get("priority") == "HIGH"
+                else "🔵"
             )
             lines.append(f"### {priority_emoji} {rec.get('title')}")
             lines.append(f"**Priority**: {rec.get('priority')}")
@@ -688,7 +658,7 @@ def format_markdown_report(report_data: Dict) -> str:
     return "\n".join(lines)
 
 
-def format_html_report(report_data: Dict) -> str:
+def format_html_report(report_data: dict) -> str:
     """Format report as HTML."""
     html = f"""<!DOCTYPE html>
 <html>
@@ -710,9 +680,9 @@ def format_html_report(report_data: Dict) -> str:
     <h1>AKS IP Exhaustion Diagnostic Report</h1>
     <div class="summary">
         <h2>Summary</h2>
-        <p><strong>Cluster:</strong> {report_data['cluster_info']['name']}</p>
-        <p><strong>Overall Status:</strong> <span class="{'healthy' if report_data['summary']['overall_status'] == 'HEALTHY' else 'critical'}">{report_data['summary']['overall_status']}</span></p>
-        <p><strong>Total Issues:</strong> {report_data['summary']['total_issues']}</p>
+        <p><strong>Cluster:</strong> {report_data["cluster_info"]["name"]}</p>
+        <p><strong>Overall Status:</strong> <span class="{"healthy" if report_data["summary"]["overall_status"] == "HEALTHY" else "critical"}">{report_data["summary"]["overall_status"]}</span></p>
+        <p><strong>Total Issues:</strong> {report_data["summary"]["total_issues"]}</p>
     </div>
 </body>
 </html>"""

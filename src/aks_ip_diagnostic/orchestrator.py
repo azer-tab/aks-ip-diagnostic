@@ -21,7 +21,11 @@ from aks_ip_diagnostic.models import ScanConfig
 from aks_ip_diagnostic.status import capacity_status, status_from_issues
 from diagnostics.ip_exhaustion import check_ip_exhaustion
 from diagnostics.subnet_capacity import check_subnet_capacity
-from reports.formatters import DiagnosticReportBuilder, create_issue, create_recommendation
+from reports.formatters import (
+    DiagnosticReportBuilder,
+    create_issue,
+    create_recommendation,
+)
 from utils.cost_calculator import (
     calculate_health_score,
     calculate_ip_waste_cost,
@@ -189,7 +193,9 @@ class AKSDiagnosticOrchestrator:
             )
         except Exception as exc:  # Cost calculation is advisory only.
             self.logger.debug(
-                "Could not estimate cost for pool %s: %s", getattr(pool, "name", "unknown"), exc
+                "Could not estimate cost for pool %s: %s",
+                getattr(pool, "name", "unknown"),
+                exc,
             )
 
     def _add_pool_subnet_fields(self, pool_data: dict[str, Any], pool) -> None:
@@ -199,7 +205,8 @@ class AKSDiagnosticOrchestrator:
         subnet_ref = parse_subnet_id(subnet_id)
         if not subnet_ref:
             self.logger.debug(
-                "Node pool %s has no explicit subnet ID", getattr(pool, "name", "unknown")
+                "Node pool %s has no explicit subnet ID",
+                getattr(pool, "name", "unknown"),
             )
             return
 
@@ -312,7 +319,7 @@ class AKSDiagnosticOrchestrator:
             "ip_breakdown": {
                 "azure_reserved": 5,
                 "node_ips": node_count,
-                "pod_ips_allocated": used_ips - node_count if used_ips > node_count else 0,
+                "pod_ips_allocated": (used_ips - node_count if used_ips > node_count else 0),
                 "available": available_ips,
             },
         }
@@ -332,7 +339,11 @@ class AKSDiagnosticOrchestrator:
     def _run_ip_exhaustion(self, builder, cluster, node_pools: list) -> list[dict[str, Any]]:
         self.logger.info("Checking for IP exhaustion")
         issues = check_ip_exhaustion(
-            self.azure.aks_client, cluster, node_pools, self.azure.network_client, self.logger
+            self.azure.aks_client,
+            cluster,
+            node_pools,
+            self.azure.network_client,
+            self.logger,
         )
         for issue in issues:
             builder.add_issue(issue)
@@ -429,8 +440,10 @@ class AKSDiagnosticOrchestrator:
         ]
         builder.add_diagnostic_result(
             diagnostic_type="subnet_capacity",
-            status="FAIL" if critical_subnets else ("WARNING" if warning_subnets else "PASS"),
-            risk_level="CRITICAL" if critical_subnets else ("MEDIUM" if warning_subnets else "LOW"),
+            status=("FAIL" if critical_subnets else ("WARNING" if warning_subnets else "PASS")),
+            risk_level=(
+                "CRITICAL" if critical_subnets else ("MEDIUM" if warning_subnets else "LOW")
+            ),
             issues=issues,
             details={
                 "total_subnets": len(subnets),
@@ -439,11 +452,11 @@ class AKSDiagnosticOrchestrator:
                 ),
                 "warning_subnets": len(warning_subnets),
                 "critical_subnets": len(critical_subnets),
-                "max_utilization_percent": max(
-                    [subnet.get("utilization_percent", 0) for subnet in subnets]
-                )
-                if subnets
-                else 0,
+                "max_utilization_percent": (
+                    max([subnet.get("utilization_percent", 0) for subnet in subnets])
+                    if subnets
+                    else 0
+                ),
             },
         )
         return list(issues)
@@ -540,7 +553,10 @@ class AKSDiagnosticOrchestrator:
             )
 
     def _set_summary(
-        self, builder: DiagnosticReportBuilder, node_pools: list, all_issues: list[dict[str, Any]]
+        self,
+        builder: DiagnosticReportBuilder,
+        node_pools: list,
+        all_issues: list[dict[str, Any]],
     ) -> None:
         """Calculate final status, health, efficiency, and capacity summary."""
 
@@ -549,7 +565,7 @@ class AKSDiagnosticOrchestrator:
         max_subnet_utilization = max(
             [subnet.get("utilization_percent", 0) for subnet in subnets], default=0
         )
-        total_allocated_ips = sum(subnet.get("total_ips", 0) for subnet in subnets)
+        # total_allocated_ips = sum(subnet.get("total_ips", 0) for subnet in subnets)
         total_used_ips = sum(subnet.get("used_ips", 0) for subnet in subnets)
         total_max_pods = sum(
             (getattr(pool, "max_pods", None) or 30) * (getattr(pool, "count", 0) or 0)
@@ -589,18 +605,20 @@ class AKSDiagnosticOrchestrator:
                 "current_monthly_estimated_usd": round(total_monthly_cost, 2),
                 "potential_savings_usd": round(potential_savings, 2),
                 "optimization_opportunity_percent": round(
-                    (potential_savings / total_monthly_cost * 100) if total_monthly_cost > 0 else 0,
+                    (
+                        (potential_savings / total_monthly_cost * 100)
+                        if total_monthly_cost > 0
+                        else 0
+                    ),
                     2,
                 ),
             },
             capacity_outlook={
                 "can_upgrade_safely": max_subnet_utilization < 85,
-                "headroom_percent": round(100 - max_subnet_utilization, 2)
-                if max_subnet_utilization > 0
-                else 100,
-                "available_ips": sum(
-                    subnet.get("available_ips", 0) for subnet in subnets
+                "headroom_percent": (
+                    round(100 - max_subnet_utilization, 2) if max_subnet_utilization > 0 else 100
                 ),
+                "available_ips": sum(subnet.get("available_ips", 0) for subnet in subnets),
             },
         )
 

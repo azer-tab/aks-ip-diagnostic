@@ -92,9 +92,7 @@ def test_text_output_uses_operator_friendly_sections():
             "risk_level": "LOW",
             "total_issues": 0,
         },
-        "diagnostics": {
-            "ip_exhaustion": {"status": "PASS", "risk_level": "LOW", "issues": []}
-        },
+        "diagnostics": {"ip_exhaustion": {"status": "PASS", "risk_level": "LOW", "issues": []}},
         "subnets": [
             {
                 "name": "pod-cidr",
@@ -133,9 +131,7 @@ def test_max_pods_status_matches_issue_threshold():
     ]
     config = ScanConfig(subscription_id="sub", resource_group="rg", cluster_name="aks")
     logger = setup_logger("test-max-pods", verbose=False)
-    orchestrator = AKSDiagnosticOrchestrator(
-        config, logger, FakeAzureCollector(cluster, pools)
-    )
+    orchestrator = AKSDiagnosticOrchestrator(config, logger, FakeAzureCollector(cluster, pools))
     builder = DiagnosticReportBuilder("aks", "rg", "sub")
     issues = orchestrator._run_max_pods(builder, pools)
 
@@ -150,9 +146,7 @@ def test_non_failed_provisioning_state_is_warning_not_critical():
     pools = [SimpleNamespace(name="user", provisioning_state="Updating")]
     config = ScanConfig(subscription_id="sub", resource_group="rg", cluster_name="aks")
     logger = setup_logger("test-provisioning", verbose=False)
-    orchestrator = AKSDiagnosticOrchestrator(
-        config, logger, FakeAzureCollector(cluster, pools)
-    )
+    orchestrator = AKSDiagnosticOrchestrator(config, logger, FakeAzureCollector(cluster, pools))
     builder = DiagnosticReportBuilder("aks", "rg", "sub")
     issues = orchestrator._run_provisioning_state(builder, pools)
     diagnostic = builder.data["diagnostics"]["provisioning_state"]

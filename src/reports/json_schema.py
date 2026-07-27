@@ -238,15 +238,12 @@ NODE_POOL_ANALYSIS_SCHEMA = {
                 "total_ip_requirement": {"type": "integer"},
                 "surge_ip_requirement": {"type": "integer"},
                 "subnet_available_ips": {"type": "integer"},
-                "ip_headroom_percentage": {"type": "number"}
-            }
+                "ip_headroom_percentage": {"type": "number"},
+            },
         },
-        "issues": {
-            "type": "array",
-            "items": {"$ref": "#/definitions/issue"}
-        },
-        "health_score": {"type": "number", "minimum": 0, "maximum": 100}
-    }
+        "issues": {"type": "array", "items": {"$ref": "#/definitions/issue"}},
+        "health_score": {"type": "number", "minimum": 0, "maximum": 100},
+    },
 }
 
 SUBNET_ANALYSIS_SCHEMA = {
@@ -265,26 +262,23 @@ SUBNET_ANALYSIS_SCHEMA = {
                 "usable_ips": {"type": "integer"},
                 "reserved_azure_ips": {"type": "integer"},
                 "allocated_ips": {"type": "integer"},
-                "available_ips": {"type": "integer"}
-            }
+                "available_ips": {"type": "integer"},
+            },
         },
         "utilization": {
             "type": "object",
             "properties": {
                 "percentage": {"type": "number"},
                 "status": {"type": "string", "enum": ["HEALTHY", "WARNING", "CRITICAL"]},
-                "trend": {"type": "string", "enum": ["STABLE", "INCREASING", "DECREASING"]}
-            }
+                "trend": {"type": "string", "enum": ["STABLE", "INCREASING", "DECREASING"]},
+            },
         },
         "node_pools": {
             "type": "array",
             "items": {
                 "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "ip_consumption": {"type": "integer"}
-                }
-            }
-        }
-    }
+                "properties": {"name": {"type": "string"}, "ip_consumption": {"type": "integer"}},
+            },
+        },
+    },
 }
