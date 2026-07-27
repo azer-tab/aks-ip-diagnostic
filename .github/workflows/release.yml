@@ -39,7 +39,7 @@ jobs:
   dockerhub:
     runs-on: ubuntu-latest
     needs: build-python
-    if: ${{ vars.PUBLISH_DOCKERHUB == 'true' }}
+    # if: ${{ vars.PUBLISH_DOCKERHUB == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - name: Extract version
