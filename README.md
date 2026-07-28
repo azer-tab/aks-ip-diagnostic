@@ -198,24 +198,154 @@ case "$status" in
 esac
 ```
 
-## Docker
+## Container image
+
+The project can be built locally or pulled from Docker Hub after a release. The image entry point is `aks-ip-diagnostic`, so arguments after the image name are passed directly to the CLI.
+
+### Build locally
+
+The package version is generated from Git tags by `setuptools-scm`. Docker build contexts normally do not include `.git`, so pass the version explicitly:
 
 ```bash
-docker build -t aks-ip-diagnostic:local .
-docker run --rm aks-ip-diagnostic:local version
+VERSION="0.1.0"
+docker build \
+  --build-arg APP_VERSION="$VERSION" \
+  -t aks-ip-diagnostic:"$VERSION" \
+  -t aks-ip-diagnostic:local \
+  .
 ```
 
-Run with service-principal environment variables:
+Verify the image:
+
+```bash
+docker run --rm aks-ip-diagnostic:local version
+docker run --rm aks-ip-diagnostic:local --help
+```
+
+### Pull a released image
+
+Replace `<dockerhub-user>` and `<version>` with the published repository and release version:
+
+```bash
+docker pull <dockerhub-user>/aks-ip-diagnostic:<version>
+docker run --rm <dockerhub-user>/aks-ip-diagnostic:<version> version
+```
+
+Use immutable version tags in automation. The `latest` tag is convenient for manual testing but does not identify a specific release.
+
+### Run a scan with a service principal
 
 ```bash
 docker run --rm \
   -e AZURE_CLIENT_ID \
   -e AZURE_TENANT_ID \
   -e AZURE_CLIENT_SECRET \
-  aks-ip-diagnostic:local scan \
+  <dockerhub-user>/aks-ip-diagnostic:<version> scan \
     --subscription-id "<subscription-id>" \
     --resource-group "<resource-group>" \
     --cluster-name "<cluster-name>"
+```
+
+The three Azure variables must already be exported in the host shell. Avoid placing secret values directly in shell history. An environment file can also be used:
+
+```bash
+cat > .env.azure <<'EOF'
+AZURE_CLIENT_ID=<client-id>
+AZURE_TENANT_ID=<tenant-id>
+AZURE_CLIENT_SECRET=<client-secret>
+EOF
+chmod 600 .env.azure
+
+docker run --rm \
+  --env-file .env.azure \
+  <dockerhub-user>/aks-ip-diagnostic:<version> scan \
+    --subscription-id "<subscription-id>" \
+    --resource-group "<resource-group>" \
+    --cluster-name "<cluster-name>"
+```
+
+### Save reports on the host
+
+The container runs as an unprivileged user. Mount a writable host directory at `/app/reports`:
+
+```bash
+mkdir -p reports
+chmod u+rwx reports
+
+docker run --rm \
+  --env-file .env.azure \
+  --mount type=bind,src="$(pwd)/reports",dst=/app/reports \
+  <dockerhub-user>/aks-ip-diagnostic:<version> scan \
+    --subscription-id "<subscription-id>" \
+    --resource-group "<resource-group>" \
+    --cluster-name "<cluster-name>" \
+    --format json-pretty \
+    --validate-schema \
+    --output /app/reports/aks-ip-report.json
+```
+
+Inspect the output:
+
+```bash
+ls -l reports/
+cat reports/aks-ip-report.json
+```
+
+### Useful Docker operations
+
+```bash
+# Show local images
+docker image ls aks-ip-diagnostic
+
+# Inspect image metadata
+docker image inspect aks-ip-diagnostic:local
+
+# Run an interactive shell for troubleshooting
+docker run --rm -it --entrypoint /bin/sh aks-ip-diagnostic:local
+
+# Remove a local image
+docker image rm aks-ip-diagnostic:local
+
+# Remove unused build cache
+docker builder prune
+```
+
+## Helm release artifact
+
+The `helm` job in the release workflow validates and packages the Helm chart. It is useful when the CLI is intended to run inside Kubernetes, for example as a one-off `Job`, scheduled `CronJob`, or an operator-support utility.
+
+The job normally performs three release checks:
+
+1. `helm lint` checks the chart for structural and template problems.
+2. `helm package` creates a versioned `.tgz` chart archive.
+3. `actions/upload-artifact` stores that archive with the workflow run.
+
+The job does **not** deploy anything to a Kubernetes cluster and, as currently written, does not publish the chart to an OCI registry or Helm repository. If the project is only distributed as a Python package and Docker image, the Helm job is optional and can be removed. Keep it when Kubernetes installation is a supported distribution path.
+
+For a release tag such as `v0.1.0`, package the chart with the matching version and application version:
+
+```bash
+helm lint charts/aks-ip-diagnostic
+helm package charts/aks-ip-diagnostic \
+  --destination dist \
+  --version 0.1.0 \
+  --app-version 0.1.0
+```
+
+Test a chart locally before publishing it:
+
+```bash
+helm template aks-ip-diagnostic charts/aks-ip-diagnostic \
+  --set image.repository=<dockerhub-user>/aks-ip-diagnostic \
+  --set image.tag=0.1.0
+
+helm install aks-ip-diagnostic charts/aks-ip-diagnostic \
+  --namespace aks-ip-diagnostic \
+  --create-namespace \
+  --set image.repository=<dockerhub-user>/aks-ip-diagnostic \
+  --set image.tag=0.1.0
+
+helm uninstall aks-ip-diagnostic --namespace aks-ip-diagnostic
 ```
 
 ## Architecture
