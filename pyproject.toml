@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aks-ip-diagnostic"
-version = "0.3.3"
+version = "0.3.4"
 description = "Read-only AKS IP capacity and network diagnostics"
 readme = "README.md"
 requires-python = ">=3.10"
