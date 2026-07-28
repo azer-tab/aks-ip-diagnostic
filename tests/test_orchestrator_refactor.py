@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+from aks_ip_diagnostic import __version__
 from aks_ip_diagnostic.models import ScanConfig
 from aks_ip_diagnostic.orchestrator import AKSDiagnosticOrchestrator
 from reports.formatters import DiagnosticReportBuilder, OutputFormat, format_report
@@ -71,7 +72,7 @@ def test_orchestrator_builds_report_without_cli_or_live_azure():
     assert report["cluster_info"]["location"] == "eastus"
     assert report["node_pools"][0]["name"] == "system"
     assert report["summary"]["overall_status"] == "HEALTHY"
-    assert report["metadata"]["tool_version"] == "0.3.3"
+    assert report["metadata"]["tool_version"] == __version__
     assert ReportValidator.validate_diagnostic_report(report) == (True, [])
 
 

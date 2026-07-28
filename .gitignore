@@ -157,3 +157,6 @@ secrets.yaml
 temp/
 tmp/
 *.tmp
+
+
+src/aks_ip_diagnostic/_version.py
